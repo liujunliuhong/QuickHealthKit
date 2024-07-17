@@ -1,0 +1,688 @@
+//
+//  HealthManager.swift
+//  Glycemic
+//
+//  Created by dfsx6 on 2023/10/20.
+//
+
+import Foundation
+import HealthKit
+import SwiftDate
+
+private let queue = DispatchQueue(label: "com.galaxy.Health.HealthData", qos: .unspecified)
+
+public final class HealthManager {
+    
+    public static let `default` = HealthManager()
+    
+    private let healthStore: HKHealthStore = HKHealthStore()
+    
+    private init() {
+        // 设置QuickHealthKit的SwiftDate的地域
+        // 公历、当前时区、本地化采用英语
+//        SwiftDate.defaultRegion = Region(calendar: Calendars.gregorian,
+//                                         zone: Zones.current,
+//                                         locale: Locales.englishUnitedStatesComputer)
+    }
+}
+
+extension HealthManager {
+    /// 设置默认区域。该方法应该在应用初始化时调用
+    public func setDefaultRegion(_ region: Region) {
+        SwiftDate.defaultRegion = region
+    }
+}
+
+extension HealthManager {
+    /// 请求健康权限
+    public func requestHealthAuthorization(with types: [HKSampleType], allowWrite: Bool = false, completion: ((_ success: Bool) -> Void)?) {
+        queue.async {
+            HealthLog.Log("Request HealthKit Authorization...")
+            
+            if !HKHealthStore.isHealthDataAvailable() {
+                HealthLog.Log("HealthKit不可用")
+                completion?(false)
+                return
+            }
+            
+            let sampleTypes: Set<HKSampleType> = Set(types)
+            
+            HealthManager.default.healthStore.requestAuthorization(toShare: allowWrite ? sampleTypes : nil, read: sampleTypes) { success, error in
+                HealthLog.Log("Request HealthKit Authorization Error: \(error?.localizedDescription ?? "nil")")
+                completion?(success)
+            }
+        }
+    }
+    
+    /// 检查某个ObjectType的授权状态
+    /// 该方法检查的是Share的状态。系统没有提供检查Read的状态方法。
+    /// 如果用户关闭了Read权限，但是没有关闭Share权限，此时仍然返回的是`sharingAuthorized`状态
+    /// 只能通过此方法判断用户是否开启了某个ObjectType的权限
+    public func authorizationStatusFor(for type: HKObjectType) -> HKAuthorizationStatus {
+        return HealthManager.default.healthStore.authorizationStatus(for: type)
+    }
+}
+
+extension HealthManager {
+    /// 禁用所有更新通知的后台传送
+    public func disableAllBackgroundDelivery(completion: ((_ success: Bool, _ error: Error?) -> Void)?) {
+        HealthManager.default.healthStore.disableAllBackgroundDelivery { suc, err in
+            HealthLog.Log("Disable All Background Delivery: \(suc) - \(err?.localizedDescription ?? "nil")")
+            completion?(suc, err)
+        }
+    }
+    
+    /// 监控HRV变化
+    public func enableBackgroundDeliveryForHeartRateVariability(completion: (() -> Void)?) {
+        let sampleType = HealthSampleType.heartRateVariabilitySDNN
+        let query = HKObserverQuery(sampleType: sampleType, predicate: nil) { _, completionHandler, error in
+            if let error = error {
+                HealthLog.Log("HKObserverQuery Error: \(error.localizedDescription)")
+                completionHandler()
+                return
+            }
+            completion?()
+            completionHandler()
+        }
+        HealthManager.default.healthStore.execute(query)
+        
+        HealthManager.default.healthStore.enableBackgroundDelivery(for: sampleType, frequency: .immediate) { success, error in
+            HealthLog.Log("Enable Background Delivery For HRV: \(success) - \(error?.localizedDescription ?? "nil")")
+        }
+    }
+}
+
+extension HealthManager {
+    /// 获取Beat-to-Beat Measurements
+    private func _requestBeatToBeatMeasurements(heartbeatSeries: HKHeartbeatSeriesSample, completion: ((_ timeSinceSeriesStarts: [TimeInterval]) -> Void)?) {
+        queue.async {
+            var timeSinceSeriesStarts: [TimeInterval] = []
+            
+            let sem = DispatchSemaphore(value: 0)
+            
+            let query = HKHeartbeatSeriesQuery(heartbeatSeries: heartbeatSeries) { query, timeSinceSeriesStart, precededByGap, done, error in
+                // HealthLog.Log("timeSinceSeriesStart: \(timeSinceSeriesStart), precededByGap: \(precededByGap), done: \(done), error: \(String(describing: error))")
+                if error == nil {
+                    if done {
+                        timeSinceSeriesStarts.append(timeSinceSeriesStart * 1000.0)
+                        sem.signal()
+                    } else {
+                        if !precededByGap {
+                            timeSinceSeriesStarts.append(timeSinceSeriesStart * 1000.0)
+                        }
+                    }
+                    /*
+                     测试发现：
+                     1. 如果precededByGap为true，苹果忽略了该计数
+                     */
+                } else {
+                    sem.signal()
+                }
+            }
+            
+            HealthManager.default.healthStore.execute(query)
+            
+            sem.wait()
+            
+            completion?(timeSinceSeriesStarts)
+        }
+    }
+    
+    /// 获取Beat-to-Beat Measurements
+    public func requestBeatToBeatMeasurements(startDate: Date, endDate: Date, ascending: Bool, completion: ((_ otherDatas: [HealthOtherData?]) -> Void)?) {
+        queue.async {
+            let sampleType = HealthSampleType.beatToBeatMeasurements
+            
+            let predicate = HKQuery.predicateForSamples(withStart: startDate, end: endDate)
+            
+            let timeSortDescriptor = NSSortDescriptor(key: HKSampleSortIdentifierEndDate, ascending: ascending)
+            let sortDescriptors = [timeSortDescriptor]
+            
+            let query = HKSampleQuery(sampleType: sampleType,
+                                      predicate: predicate,
+                                      limit: HKObjectQueryNoLimit,
+                                      sortDescriptors: sortDescriptors) { query, samples, error in
+                let heartbeatSeriesSamples = (samples ?? []).map { $0 as? HKHeartbeatSeriesSample }.compactMap { $0 }
+                
+                let group = DispatchGroup()
+                var otherDatas: [HealthOtherData?] = Array(repeating: nil, count: heartbeatSeriesSamples.count)
+                for (i, heartbeatSeriesSample) in heartbeatSeriesSamples.enumerated() {
+                    group.enter()
+                    HealthManager.default._requestBeatToBeatMeasurements(heartbeatSeries: heartbeatSeriesSample) { timeSinceSeriesStarts in
+                        let otherData: HealthOtherData? = HealthHelper.calculateOtherHealthData(timeSinceSeriesStarts: timeSinceSeriesStarts)
+                        otherDatas[i] = otherData
+                        group.leave()
+                    }
+                }
+                group.notify(queue: queue) {
+                    completion?(otherDatas)
+                }
+            }
+            HealthManager.default.healthStore.execute(query)
+        }
+    }
+    
+    /// 获取HRV集合
+    public func requestHeartRateVariability(startDate: Date, endDate: Date, ascending: Bool, completion: ((_ results: [HKQuantitySample]) -> Void)?) {
+        queue.async {
+            let quantityType = HealthSampleType.heartRateVariabilitySDNN
+            
+            let predicate = HKQuery.predicateForSamples(withStart: startDate, end: endDate)
+            
+            let timeSortDescriptor = NSSortDescriptor(key: HKSampleSortIdentifierEndDate, ascending: ascending)
+            let sortDescriptors = [timeSortDescriptor]
+            
+            let query = HKSampleQuery(sampleType: quantityType,
+                                      predicate: predicate,
+                                      limit: HKObjectQueryNoLimit,
+                                      sortDescriptors: sortDescriptors) { _, results, error in
+                if let error = error {
+                    
+                    HealthLog.Log("=================================")
+                    HealthLog.Log("=================================")
+                    HealthLog.Log("查询\(startDate.toString(.custom("yyyy-MM-dd HH:mm"))) - \(endDate.toString(.custom("yyyy-MM-dd HH:mm")))【HRV】失败: \(error.localizedDescription)")
+                    HealthLog.Log("=================================")
+                    HealthLog.Log("=================================")
+                    
+                    completion?([])
+                    return
+                }
+                
+                let results = (results ?? [])
+                    .map { $0 as? HKQuantitySample }
+                    .compactMap { $0 }
+                    .filter({ sample -> Bool in
+                        // 过滤掉用户输入的数据
+                        if let value = sample.metadata?[HKMetadataKeyWasUserEntered] as? Bool {
+                            return value == false
+                        }
+                        return true
+                    })
+                
+                HealthLog.Log("=================================")
+                HealthLog.Log("=================================")
+                HealthLog.Log("查询\(startDate.toString(.custom("yyyy-MM-dd HH:mm"))) - \(endDate.toString(.custom("yyyy-MM-dd HH:mm")))的【HRV】成功，数量: \(results.count)")
+                HealthLog.Log("=================================")
+                HealthLog.Log("=================================")
+                
+                completion?(results)
+            }
+            HealthManager.default.healthStore.execute(query)
+        }
+    }
+    
+    /// 获取今天的HRV(RMSSD)集合
+    public func requestTodayHeartRateVariability(ascending: Bool, completion: ((_ results: [HKQuantitySample]) -> Void)?) {
+        let currentDate = Date.now
+        let startDate: Date = currentDate.dateAt(.startOfDay).date // 00:00:00 - 零时
+        let endDate: Date = currentDate.dateAt(.endOfDay).date // 今天的23:59:59
+        HealthManager.default.requestHeartRateVariability(startDate: startDate, endDate: endDate, ascending: ascending) { results in
+            completion?(results)
+        }
+    }
+    
+    /// 获取HeartRate集合
+    public func requestHeartRate(startDate: Date, endDate: Date, ascending: Bool, completion: ((_ results: [HKQuantitySample]) -> Void)?) {
+        queue.async {
+            let quantityType = HealthSampleType.heartRate
+            
+            let predicate = HKQuery.predicateForSamples(withStart: startDate, end: endDate)
+            
+            let timeSortDescriptor = NSSortDescriptor(key: HKSampleSortIdentifierEndDate, ascending: ascending)
+            let sortDescriptors = [timeSortDescriptor]
+            
+            let query = HKSampleQuery(sampleType: quantityType,
+                                      predicate: predicate,
+                                      limit: HKObjectQueryNoLimit,
+                                      sortDescriptors: sortDescriptors) { _, results, error in
+                if let error = error {
+                    
+                    HealthLog.Log("=================================")
+                    HealthLog.Log("=================================")
+                    HealthLog.Log("查询\(startDate.toString(.custom("yyyy/MM/dd HH:mm"))) - \(endDate.toString(.custom("yyyy/MM/dd HH:mm")))【HeartRate】失败: \(error.localizedDescription)")
+                    HealthLog.Log("=================================")
+                    HealthLog.Log("=================================")
+                    
+                    completion?([])
+                    return
+                }
+                
+                let results = (results ?? []).map { $0 as? HKQuantitySample }.compactMap { $0 }
+                
+                HealthLog.Log("=================================")
+                HealthLog.Log("=================================")
+                HealthLog.Log("查询\(startDate.toString(.custom("yyyy/MM/dd HH:mm"))) - \(endDate.toString(.custom("yyyy/MM/dd HH:mm")))【HeartRate】成功，数量: \(results.count)")
+                HealthLog.Log("=================================")
+                HealthLog.Log("=================================")
+                
+                completion?(results)
+            }
+            HealthManager.default.healthStore.execute(query)
+        }
+    }
+    
+    /// 获取RestingHeartRate集合
+    public func requestRestingHeartRate(startDate: Date, endDate: Date, ascending: Bool, completion: ((_ results: [HKQuantitySample]) -> Void)?) {
+        queue.async {
+            let quantityType = HealthSampleType.restingHeartRate
+            
+            let predicate = HKQuery.predicateForSamples(withStart: startDate, end: endDate)
+            
+            let timeSortDescriptor = NSSortDescriptor(key: HKSampleSortIdentifierEndDate, ascending: ascending)
+            let sortDescriptors = [timeSortDescriptor]
+            
+            let query = HKSampleQuery(sampleType: quantityType,
+                                      predicate: predicate,
+                                      limit: HKObjectQueryNoLimit,
+                                      sortDescriptors: sortDescriptors) { _, results, error in
+                if let error = error {
+                    
+                    HealthLog.Log("=================================")
+                    HealthLog.Log("=================================")
+                    HealthLog.Log("查询\(startDate.toString(.custom("yyyy/MM/dd HH:mm"))) - \(endDate.toString(.custom("yyyy/MM/dd HH:mm")))【Resting HeartRate】失败: \(error.localizedDescription)")
+                    HealthLog.Log("=================================")
+                    HealthLog.Log("=================================")
+                    
+                    completion?([])
+                    return
+                }
+                
+                let results = (results ?? []).map { $0 as? HKQuantitySample }.compactMap { $0 }
+                
+                HealthLog.Log("=================================")
+                HealthLog.Log("=================================")
+                HealthLog.Log("查询\(startDate.toString(.custom("yyyy/MM/dd HH:mm"))) - \(endDate.toString(.custom("yyyy/MM/dd HH:mm")))【Resting HeartRate】成功，数量: \(results.count)")
+                HealthLog.Log("=================================")
+                HealthLog.Log("=================================")
+                
+                completion?(results)
+            }
+            HealthManager.default.healthStore.execute(query)
+        }
+    }
+    
+    
+    /// 获取步数集合
+    public func requestSteps(startDate: Date, endDate: Date, ascending: Bool, completion: ((_ results: [HKQuantitySample]) -> Void)?) {
+        queue.async {
+            
+            let quantityType: HKQuantityType = HealthSampleType.stepCount
+            
+            let predicate = HKQuery.predicateForSamples(withStart: startDate, end: endDate)
+            
+            let timeSortDescriptor = NSSortDescriptor(key: HKSampleSortIdentifierEndDate, ascending: ascending)
+            let sortDescriptors = [timeSortDescriptor]
+            
+            let query = HKSampleQuery(sampleType: quantityType,
+                                      predicate: predicate,
+                                      limit: HKObjectQueryNoLimit,
+                                      sortDescriptors: sortDescriptors) { _, results, error in
+                if let error = error {
+                    
+                    HealthLog.Log("=================================")
+                    HealthLog.Log("=================================")
+                    HealthLog.Log("查询\(startDate.toString(.custom("yyyy/MM/dd HH:mm"))) - \(endDate.toString(.custom("yyyy/MM/dd HH:mm")))【StepCount】失败: \(error.localizedDescription)")
+                    HealthLog.Log("=================================")
+                    HealthLog.Log("=================================")
+                    
+                    completion?([])
+                    return
+                }
+                
+                let results = (results ?? []).map { $0 as? HKQuantitySample }.compactMap { $0 }
+                
+                HealthLog.Log("=================================")
+                HealthLog.Log("=================================")
+                HealthLog.Log("查询\(startDate.toString(.custom("yyyy/MM/dd HH:mm"))) - \(endDate.toString(.custom("yyyy/MM/dd HH:mm")))【StepCount】成功，数量: \(results.count)")
+                HealthLog.Log("=================================")
+                HealthLog.Log("=================================")
+                
+                completion?(results)
+            }
+            HealthManager.default.healthStore.execute(query)
+        }
+    }
+}
+
+extension HealthManager {
+    /// 请求某一天的健康数据
+    public func requestHealthData(year: Int,
+                                  month: Int,
+                                  day: Int,
+                                  allowRequestHRV: Bool,
+                                  allowRequestHRVOtherData: Bool,
+                                  allowRequestHR: Bool,
+                                  allowRequestRHR: Bool,
+                                  allowRequestStep: Bool,
+                                  ascending: Bool,
+                                  completion: ((_ healthData: HealthData) -> Void)?) {
+        let date = DateInRegion(year: year, month: month, day: day).date
+        HealthManager.default.requestHealthData(date: date,
+                                                allowRequestHRV: allowRequestHRV,
+                                                allowRequestHRVOtherData: allowRequestHRVOtherData,
+                                                allowRequestHR: allowRequestHR,
+                                                allowRequestRHR: allowRequestRHR,
+                                                allowRequestStep: allowRequestStep,
+                                                ascending: ascending,
+                                                completion: completion)
+    }
+    
+    /// 请求某一天的健康数据
+    public func requestHealthData(date: Date,
+                                  allowRequestHRV: Bool,
+                                  allowRequestHRVOtherData: Bool,
+                                  allowRequestHR: Bool,
+                                  allowRequestRHR: Bool,
+                                  allowRequestStep: Bool,
+                                  ascending: Bool,
+                                  completion: ((_ healthData: HealthData) -> Void)?) {
+        let startDate = date.dateAt(.startOfDay).date // 00:00:00 - 零时
+        let endDate = date.dateAt(.endOfDay).date // 23:59:59
+        HealthManager.default.requestHealthDatas(startDate: startDate,
+                                                 endDate: endDate,
+                                                 allowRequestHRV: allowRequestHRV,
+                                                 allowRequestHRVOtherData: allowRequestHRVOtherData,
+                                                 allowRequestHR: allowRequestHR,
+                                                 allowRequestRHR: allowRequestRHR,
+                                                 allowRequestStep: allowRequestStep,
+                                                 ascending: ascending) { healthDatas in
+            completion?(healthDatas.first!)
+        }
+    }
+    
+    /// 请求健康数据
+    public func requestHealthDatas(startDate: Date,
+                                   endDate: Date,
+                                   allowRequestHRV: Bool,
+                                   allowRequestHRVOtherData: Bool,
+                                   allowRequestHR: Bool,
+                                   allowRequestRHR: Bool,
+                                   allowRequestStep: Bool,
+                                   ascending: Bool,
+                                   completion: ((_ healthDatas: [HealthData]) -> Void)?) {
+        queue.async {
+            let startTime = CFAbsoluteTimeGetCurrent()
+            
+            let pastDayCount: Int = 30 // 过去30天
+            
+            var startDate = startDate
+            var endDate = endDate
+            
+            if startDate > endDate {
+                (startDate, endDate) = (endDate, startDate)
+            }
+            
+            // 往前推30天
+            let newStartDate = startDate.dateByAdding(-pastDayCount, .day).dateAt(.startOfDay).date
+            let newEndDate = startDate.dateByAdding(-1, .day).dateAt(.endOfDay).date
+            
+            var _normalHealthDatas: [HealthData] = []
+            var _newHealthDatas: [HealthData] = []
+            
+            let group = DispatchGroup()
+            
+            group.enter()
+            HealthManager.default.__requestHealthDatas(startDate: startDate,
+                                                       endDate: endDate,
+                                                       allowRequestHRV: allowRequestHRV,
+                                                       allowRequestHRVOtherData: allowRequestHRVOtherData,
+                                                       allowRequestHR: allowRequestHR,
+                                                       allowRequestRHR: allowRequestRHR,
+                                                       allowRequestStep: allowRequestStep,
+                                                       ascending: ascending) { healthDatas in
+                _normalHealthDatas = healthDatas
+                group.leave()
+            }
+            
+            
+            
+            group.enter()
+            HealthManager.default.__requestHealthDatas(startDate: newStartDate,
+                                                       endDate: newEndDate,
+                                                       allowRequestHRV: allowRequestHRV,
+                                                       allowRequestHRVOtherData: allowRequestHRVOtherData,
+                                                       allowRequestHR: allowRequestHR,
+                                                       allowRequestRHR: allowRequestRHR,
+                                                       allowRequestStep: allowRequestStep,
+                                                       ascending: ascending) { healthDatas in
+                _newHealthDatas = healthDatas
+                group.leave()
+            }
+            
+            group.notify(queue: queue) {
+                var tempHealthDatas: [HealthData] = _normalHealthDatas
+                if ascending {
+                    tempHealthDatas.insert(contentsOf: _newHealthDatas, at: 0)
+                } else {
+                    tempHealthDatas.append(contentsOf: _newHealthDatas)
+                }
+                
+                if ascending {
+                    // 升序
+                    for (i, healthData) in tempHealthDatas.enumerated() {
+                        if i >= pastDayCount {
+                            let array = Array(tempHealthDatas[(i - pastDayCount)..<i])
+                            healthData.pastDatas = array
+                        }
+                    }
+                } else {
+                    // 降序
+                    for (i, healthData) in tempHealthDatas.enumerated() {
+                        if i - _normalHealthDatas.count < 0 {
+                            let array = Array(tempHealthDatas[(i + 1)..<(i + pastDayCount)])
+                            healthData.pastDatas = array
+                        }
+                    }
+                }
+                
+                let endTime = CFAbsoluteTimeGetCurrent()
+                
+                HealthLog.Log("HealthKit - 查询所有健康数据成功🎉🎉🎉🎉🎉")
+                HealthLog.Log("HealthKit - 查询所有健康数据耗时🎉🎉🎉🎉🎉: \(endTime - startTime)s")
+                
+                completion?(_normalHealthDatas)
+            }
+        }
+    }
+}
+
+extension HealthManager {
+    private func __requestHealthDatas(startDate: Date,
+                                      endDate: Date,
+                                      allowRequestHRV: Bool,
+                                      allowRequestHRVOtherData: Bool,
+                                      allowRequestHR: Bool,
+                                      allowRequestRHR: Bool,
+                                      allowRequestStep: Bool,
+                                      ascending: Bool,
+                                      completion: ((_ healthDatas: [HealthData]) -> Void)?) {
+        queue.async {
+            
+            var startDate = startDate
+            var endDate = endDate
+            
+            if startDate > endDate {
+                (startDate, endDate) = (endDate, startDate)
+            }
+            
+            var heartRateVariabilitySamples: [HKQuantitySample] = []
+            var otherDatas: [HealthOtherData?] = []
+            
+            var heartRateSamples: [HKQuantitySample] = []
+            var restingHeartRateSamples: [HKQuantitySample] = []
+            
+            var stepSamples: [HKQuantitySample] = []
+            
+            let group = DispatchGroup()
+            
+            if allowRequestHRV {
+                group.enter()
+                HealthManager.default.requestHeartRateVariability(startDate: startDate,
+                                                                  endDate: endDate,
+                                                                  ascending: ascending) { results in
+                    heartRateVariabilitySamples = results
+                    group.leave()
+                }
+            }
+            
+            if allowRequestHRVOtherData {
+                group.enter()
+                HealthManager.default.requestBeatToBeatMeasurements(startDate: startDate, endDate: endDate, ascending: ascending) { _otherDatas in
+                    otherDatas = _otherDatas
+                    group.leave()
+                }
+            }
+            
+            if allowRequestRHR {
+                group.enter()
+                HealthManager.default.requestRestingHeartRate(startDate: startDate, endDate: endDate, ascending: ascending) { results in
+                    restingHeartRateSamples = results
+                    group.leave()
+                }
+            }
+            
+            
+            if allowRequestHR {
+                group.enter()
+                HealthManager.default.requestHeartRate(startDate: startDate,
+                                                       endDate: endDate,
+                                                       ascending: ascending) { results in
+                    heartRateSamples = results
+                    group.leave()
+                }
+            }
+            
+            
+            if allowRequestStep {
+                group.enter()
+                HealthManager.default.requestSteps(startDate: startDate, endDate: endDate, ascending: ascending) { results in
+                    stepSamples = results
+                    group.leave()
+                }
+            }
+            
+            group.notify(queue: queue) {
+                
+                // 处理OtherData
+                // 有一个HRV Data必有一个Other Data
+                if !otherDatas.isEmpty {
+                    for (index, quantitySample) in heartRateVariabilitySamples.enumerated() {
+                        var otherData: HealthOtherData?
+                        if index >= 0 && index <= otherDatas.count - 1 {
+                            otherData = otherDatas[index]
+                        }
+                        quantitySample.otherData = otherData
+                    }
+                }
+                
+                
+                
+                var startDate = startDate
+                var endDate = endDate
+                
+                if startDate > endDate {
+                    (startDate, endDate) = (endDate, startDate)
+                }
+                
+                startDate = startDate.dateAt(.startOfDay).date
+                endDate = endDate.dateAt(.endOfDay).date
+                
+                
+                let differenceDayCount = abs(endDate.difference(in: .day, from: startDate) ?? 0)
+                
+                
+                var models: [HealthData] = []
+                for i in 0...differenceDayCount {
+                    let dayDate = endDate.dateByAdding(-i, .day)
+                    let _startDate = dayDate.dateAt(.startOfDay).date
+                    let _endDate = dayDate.dateAt(.endOfDay).date
+                    let model = HealthData(startDate: _startDate, endDate: _endDate)
+                    if ascending {
+                        models.insert(model, at: 0)
+                    } else {
+                        models.append(model)
+                    }
+                }
+                
+                func _getInfo(array: [HKQuantitySample]) -> [String: [HKQuantitySample]] {
+                    var info: [String: [HKQuantitySample]] = [:]
+                    for sample in array {
+                        let key = sample.displayDate.toString(.custom("yyyy-MM-dd"))
+                        if var _array = info[key] {
+                            _array.append(sample)
+                            info[key] = _array
+                        } else {
+                            info[key] = [sample]
+                        }
+                    }
+                    return info
+                }
+                
+                
+                var heartRateSampleInfo: [String: [HKQuantitySample]] = [:]
+                var stepSampleInfo: [String: [HKQuantitySample]] = [:]
+                var restingHeartRateSampleInfo: [String: [HKQuantitySample]] = [:]
+                var heartRateVariabilitySampleInfo: [String: [HKQuantitySample]] = [:]
+                
+                let sampleInfoGroup = DispatchGroup()
+                
+                sampleInfoGroup.enter()
+                queue.async {
+                    heartRateSampleInfo = _getInfo(array: heartRateSamples)
+                    sampleInfoGroup.leave()
+                }
+                
+                sampleInfoGroup.enter()
+                queue.async {
+                    stepSampleInfo = _getInfo(array: stepSamples)
+                    sampleInfoGroup.leave()
+                }
+                
+                sampleInfoGroup.enter()
+                queue.async {
+                    restingHeartRateSampleInfo = _getInfo(array: restingHeartRateSamples)
+                    sampleInfoGroup.leave()
+                }
+                
+                sampleInfoGroup.enter()
+                queue.async {
+                    heartRateVariabilitySampleInfo = _getInfo(array: heartRateVariabilitySamples)
+                    sampleInfoGroup.leave()
+                }
+                
+                sampleInfoGroup.notify(queue: queue) {
+                    
+                    for model in models {
+                        let key = model.displayDate.toString(.custom("yyyy-MM-dd"))
+                        
+                        for (_key, _array) in heartRateSampleInfo {
+                            if _key == key {
+                                model.addHrDatas(_array)
+                            }
+                        }
+                        
+                        for (_key, _array) in stepSampleInfo {
+                            if _key == key {
+                                model.addStepDatas(_array)
+                            }
+                        }
+                        
+                        for (_key, _array) in restingHeartRateSampleInfo {
+                            if _key == key {
+                                model.addRhrDatas(_array)
+                            }
+                        }
+                        
+                        for (_key, _array) in heartRateVariabilitySampleInfo {
+                            if _key == key {
+                                model.addHrvDatas(_array)
+                            }
+                        }
+                    }
+                    
+                    completion?(models)
+                }
+            }
+        }
+    }
+}
