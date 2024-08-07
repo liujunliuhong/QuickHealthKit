@@ -170,32 +170,56 @@ extension HKQuantitySample {
 extension Array where Element == HealthData {
     /// 平均HRV。如果为nil，表示无数据
     public var avgHRV: Int? {
-        return flatMap { $0.hrvDatas }.avgHRV
+        let values = map { $0.avgHRV }.compactMap { $0 }.map { Double($0) }
+        if let avg = _avg_(values: values) {
+            return Int(avg)
+        }
+        return nil
     }
     
     /// 获取HRV范围
     public var hrvRange: (min: Int, max: Int)? {
-        return flatMap { $0.hrvDatas }.hrvRange
+        let values = map { $0.avgHRV }.compactMap { $0 }
+        if values.isEmpty {
+            return nil
+        }
+        return (values.min()!, values.max()!)
     }
     
     /// 获取平均HR。如果为nil，表示无数据
     public var avgHR: Int? {
-        return flatMap { $0.hrDatas }.avgHR
+        let values = map { $0.avgHR }.compactMap { $0 }.map { Double($0) }
+        if let avg = _avg_(values: values) {
+            return Int(avg)
+        }
+        return nil
     }
     
     /// 获取HR范围
     public var hrRange: (min: Int, max: Int)? {
-        return flatMap { $0.hrDatas }.hrRange
+        let values = map { $0.avgHR }.compactMap { $0 }
+        if values.isEmpty {
+            return nil
+        }
+        return (values.min()!, values.max()!)
     }
     
     /// 获取平均RHR。如果为nil，表示无数据
     public var avgRHR: Int? {
-        return flatMap { $0.rhrDatas }.avgRHR
+        let values = map { $0.avgRHR }.compactMap { $0 }.map { Double($0) }
+        if let avg = _avg_(values: values) {
+            return Int(avg)
+        }
+        return nil
     }
     
     /// 获取RHR范围
     public var rhrRange: (min: Int, max: Int)? {
-        return flatMap { $0.rhrDatas }.rhrRange
+        let values = map { $0.avgRHR }.compactMap { $0 }
+        if values.isEmpty {
+            return nil
+        }
+        return (values.min()!, values.max()!)
     }
     
     /// 获取步数
@@ -205,22 +229,18 @@ extension Array where Element == HealthData {
     
     /// 获取步数范围
     public var stepRange: (min: Int, max: Int)? {
-        return flatMap { $0.stepDatas }.stepRange
+        let values = map { $0.stepCount }
+        if values.isEmpty {
+            return nil
+        }
+        return (values.min()!, values.max()!)
     }
     
     public var avgOtherData: HealthOtherData? {
-        let otherDatas = flatMap { $0.hrvDatas }.map { $0.otherData }.compactMap { $0 }
+        let otherDatas = map { $0.avgOtherData }.compactMap { $0 }
         
         if otherDatas.isEmpty {
             return nil
-        }
-        
-        func _avg_(values: [Double]) -> Double? {
-            if values.isEmpty {
-                return nil
-            }
-            let sum = values.reduce(0, { $0 + $1 })
-            return sum / CGFloat(values.count)
         }
         
         // cv
@@ -254,4 +274,12 @@ extension Array where Element == HealthData {
                                mxdmn: avgMxdmn == nil ? nil : Int(avgMxdmn!),
                                cv: avgCV == nil ? nil : Int(avgCV!))
     }
+}
+
+private func _avg_(values: [Double]) -> Double? {
+    if values.isEmpty {
+        return nil
+    }
+    let sum = values.reduce(0, { $0 + $1 })
+    return sum / CGFloat(values.count)
 }
