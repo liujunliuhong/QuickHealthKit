@@ -8,7 +8,14 @@
 import Foundation
 import HealthKit
 
-public final class HealthData {
+public final class HealthData: Identifiable, Equatable {
+    
+    public static func == (lhs: HealthData, rhs: HealthData) -> Bool {
+        return lhs.id == rhs.id
+    }
+    
+    public private(set) var id = UUID()
+    
     /// 开始日期
     public let startDate: Date
     
