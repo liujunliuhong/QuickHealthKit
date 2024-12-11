@@ -57,4 +57,37 @@ public struct HealthSampleType {
     public static var beatToBeatMeasurements: HKSampleType {
         return HKSeriesType.heartbeat()
     }
+    
+    /// 高血压
+    public static var bloodPressureSystolic: HKQuantityType {
+        let _type_: HKQuantityType
+        if #available(iOS 15.0, watchOS 8.0, *) {
+            _type_ = HKQuantityType(.bloodPressureSystolic)
+        } else {
+            _type_ = HKObjectType.quantityType(forIdentifier: .bloodPressureSystolic)!
+        }
+        return _type_
+    }
+    
+    /// 低血压
+    public static var bloodPressureDiastolic: HKQuantityType {
+        let _type_: HKQuantityType
+        if #available(iOS 15.0, watchOS 8.0, *) {
+            _type_ = HKQuantityType(.bloodPressureDiastolic)
+        } else {
+            _type_ = HKObjectType.quantityType(forIdentifier: .bloodPressureDiastolic)!
+        }
+        return _type_
+    }
+    
+    /// 体重
+    public static var bodyMass: HKQuantityType {
+        let _type_: HKQuantityType
+        if #available(iOS 15.0, watchOS 8.0, *) {
+            _type_ = HKQuantityType(.bodyMass)
+        } else {
+            _type_ = HKObjectType.quantityType(forIdentifier: .bodyMass)!
+        }
+        return _type_
+    }
 }

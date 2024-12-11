@@ -20,9 +20,9 @@ public final class HealthManager {
     private init() {
         // 设置QuickHealthKit的SwiftDate的地域
         // 公历、当前时区、本地化采用英语
-//        SwiftDate.defaultRegion = Region(calendar: Calendars.gregorian,
-//                                         zone: Zones.current,
-//                                         locale: Locales.englishUnitedStatesComputer)
+        //        SwiftDate.defaultRegion = Region(calendar: Calendars.gregorian,
+        //                                         zone: Zones.current,
+        //                                         locale: Locales.englishUnitedStatesComputer)
     }
 }
 
@@ -342,6 +342,129 @@ extension HealthManager {
             HealthManager.default.healthStore.execute(query)
         }
     }
+    
+    /// 获取高血压集合
+    public func requestBloodPressureSystolics(startDate: Date, endDate: Date, ascending: Bool, completion: ((_ results: [HKQuantitySample]) -> Void)?) {
+        queue.async {
+            
+            let quantityType: HKQuantityType = HealthSampleType.bloodPressureSystolic
+            
+            let predicate = HKQuery.predicateForSamples(withStart: startDate, end: endDate)
+            
+            let timeSortDescriptor = NSSortDescriptor(key: HKSampleSortIdentifierEndDate, ascending: ascending)
+            let sortDescriptors = [timeSortDescriptor]
+            
+            let query = HKSampleQuery(sampleType: quantityType,
+                                      predicate: predicate,
+                                      limit: HKObjectQueryNoLimit,
+                                      sortDescriptors: sortDescriptors) { _, results, error in
+                if let error = error {
+                    
+                    HealthLog.Log("=================================")
+                    HealthLog.Log("=================================")
+                    HealthLog.Log("查询\(startDate.toString(.custom("yyyy/MM/dd HH:mm"))) - \(endDate.toString(.custom("yyyy/MM/dd HH:mm")))【BloodPressure Systolic】失败: \(error.localizedDescription)")
+                    HealthLog.Log("=================================")
+                    HealthLog.Log("=================================")
+                    
+                    completion?([])
+                    return
+                }
+                
+                let results = (results ?? []).map { $0 as? HKQuantitySample }.compactMap { $0 }
+                
+                HealthLog.Log("=================================")
+                HealthLog.Log("=================================")
+                HealthLog.Log("查询\(startDate.toString(.custom("yyyy/MM/dd HH:mm"))) - \(endDate.toString(.custom("yyyy/MM/dd HH:mm")))【BloodPressure Systolic】成功，数量: \(results.count)")
+                HealthLog.Log("=================================")
+                HealthLog.Log("=================================")
+                
+                completion?(results)
+            }
+            HealthManager.default.healthStore.execute(query)
+        }
+    }
+    
+    /// 获取低血压集合
+    public func requestBloodPressureDiastolics(startDate: Date, endDate: Date, ascending: Bool, completion: ((_ results: [HKQuantitySample]) -> Void)?) {
+        queue.async {
+            
+            let quantityType: HKQuantityType = HealthSampleType.bloodPressureDiastolic
+            
+            let predicate = HKQuery.predicateForSamples(withStart: startDate, end: endDate)
+            
+            let timeSortDescriptor = NSSortDescriptor(key: HKSampleSortIdentifierEndDate, ascending: ascending)
+            let sortDescriptors = [timeSortDescriptor]
+            
+            let query = HKSampleQuery(sampleType: quantityType,
+                                      predicate: predicate,
+                                      limit: HKObjectQueryNoLimit,
+                                      sortDescriptors: sortDescriptors) { _, results, error in
+                if let error = error {
+                    
+                    HealthLog.Log("=================================")
+                    HealthLog.Log("=================================")
+                    HealthLog.Log("查询\(startDate.toString(.custom("yyyy/MM/dd HH:mm"))) - \(endDate.toString(.custom("yyyy/MM/dd HH:mm")))【BloodPressure Diastolic】失败: \(error.localizedDescription)")
+                    HealthLog.Log("=================================")
+                    HealthLog.Log("=================================")
+                    
+                    completion?([])
+                    return
+                }
+                
+                let results = (results ?? []).map { $0 as? HKQuantitySample }.compactMap { $0 }
+                
+                HealthLog.Log("=================================")
+                HealthLog.Log("=================================")
+                HealthLog.Log("查询\(startDate.toString(.custom("yyyy/MM/dd HH:mm"))) - \(endDate.toString(.custom("yyyy/MM/dd HH:mm")))【BloodPressure Diastolic】成功，数量: \(results.count)")
+                HealthLog.Log("=================================")
+                HealthLog.Log("=================================")
+                
+                completion?(results)
+            }
+            HealthManager.default.healthStore.execute(query)
+        }
+    }
+    
+    /// 获取体重集合
+    public func requestBodyMasses(startDate: Date, endDate: Date, ascending: Bool, completion: ((_ results: [HKQuantitySample]) -> Void)?) {
+        queue.async {
+            
+            let quantityType: HKQuantityType = HealthSampleType.bodyMass
+            
+            let predicate = HKQuery.predicateForSamples(withStart: startDate, end: endDate)
+            
+            let timeSortDescriptor = NSSortDescriptor(key: HKSampleSortIdentifierEndDate, ascending: ascending)
+            let sortDescriptors = [timeSortDescriptor]
+            
+            let query = HKSampleQuery(sampleType: quantityType,
+                                      predicate: predicate,
+                                      limit: HKObjectQueryNoLimit,
+                                      sortDescriptors: sortDescriptors) { _, results, error in
+                if let error = error {
+                    
+                    HealthLog.Log("=================================")
+                    HealthLog.Log("=================================")
+                    HealthLog.Log("查询\(startDate.toString(.custom("yyyy/MM/dd HH:mm"))) - \(endDate.toString(.custom("yyyy/MM/dd HH:mm")))【BodyMass】失败: \(error.localizedDescription)")
+                    HealthLog.Log("=================================")
+                    HealthLog.Log("=================================")
+                    
+                    completion?([])
+                    return
+                }
+                
+                let results = (results ?? []).map { $0 as? HKQuantitySample }.compactMap { $0 }
+                
+                HealthLog.Log("=================================")
+                HealthLog.Log("=================================")
+                HealthLog.Log("查询\(startDate.toString(.custom("yyyy/MM/dd HH:mm"))) - \(endDate.toString(.custom("yyyy/MM/dd HH:mm")))【BodyMass】成功，数量: \(results.count)")
+                HealthLog.Log("=================================")
+                HealthLog.Log("=================================")
+                
+                completion?(results)
+            }
+            HealthManager.default.healthStore.execute(query)
+        }
+    }
 }
 
 extension HealthManager {
@@ -489,11 +612,14 @@ extension HealthManager {
 extension HealthManager {
     private func __requestHealthDatas(startDate: Date,
                                       endDate: Date,
-                                      allowRequestHRV: Bool,
-                                      allowRequestHRVOtherData: Bool,
-                                      allowRequestHR: Bool,
-                                      allowRequestRHR: Bool,
-                                      allowRequestStep: Bool,
+                                      allowRequestHRV: Bool = false,
+                                      allowRequestHRVOtherData: Bool = false,
+                                      allowRequestHR: Bool = false,
+                                      allowRequestRHR: Bool = false,
+                                      allowRequestStep: Bool = false,
+                                      allowResquestBloodPressureSystolic: Bool = false,
+                                      allowResquestBloodPressureDiastolic: Bool = false,
+                                      allowRequestBodyMass: Bool = false,
                                       ascending: Bool,
                                       completion: ((_ healthDatas: [HealthData]) -> Void)?) {
         queue.async {
@@ -512,6 +638,10 @@ extension HealthManager {
             var restingHeartRateSamples: [HKQuantitySample] = []
             
             var stepSamples: [HKQuantitySample] = []
+            
+            var bloodPressureSystolicSamples: [HKQuantitySample] = []
+            var bloodPressureDiastolicSamples: [HKQuantitySample] = []
+            var bodyMassSamples: [HKQuantitySample] = []
             
             let group = DispatchGroup()
             
@@ -557,6 +687,29 @@ extension HealthManager {
                 group.enter()
                 HealthManager.default.requestSteps(startDate: startDate, endDate: endDate, ascending: ascending) { results in
                     stepSamples = results
+                    group.leave()
+                }
+            }
+            
+            if allowResquestBloodPressureSystolic {
+                group.enter()
+                HealthManager.default.requestBloodPressureSystolics(startDate: startDate, endDate: endDate, ascending: ascending) { results in
+                    bloodPressureSystolicSamples = results
+                    group.leave()
+                }
+            }
+            
+            if allowResquestBloodPressureDiastolic {
+                group.enter()
+                HealthManager.default.requestBloodPressureDiastolics(startDate: startDate, endDate: endDate, ascending: ascending) { results in
+                    bloodPressureDiastolicSamples = results
+                    group.leave()
+                }
+            }
+            if allowRequestBodyMass {
+                group.enter()
+                HealthManager.default.requestBodyMasses(startDate: startDate, endDate: endDate, ascending: ascending) { results in
+                    bodyMassSamples = results
                     group.leave()
                 }
             }
@@ -624,6 +777,10 @@ extension HealthManager {
                 var restingHeartRateSampleInfo: [String: [HKQuantitySample]] = [:]
                 var heartRateVariabilitySampleInfo: [String: [HKQuantitySample]] = [:]
                 
+                var bloodPressureSystolicSampleInfo: [String: [HKQuantitySample]] = [:]
+                var bloodPressureDiastolicSampleInfo: [String: [HKQuantitySample]] = [:]
+                var bodyMassSampleInfo: [String: [HKQuantitySample]] = [:]
+                
                 let sampleInfoGroup = DispatchGroup()
                 
                 sampleInfoGroup.enter()
@@ -647,6 +804,24 @@ extension HealthManager {
                 sampleInfoGroup.enter()
                 queue.async {
                     heartRateVariabilitySampleInfo = _getInfo(array: heartRateVariabilitySamples)
+                    sampleInfoGroup.leave()
+                }
+                
+                sampleInfoGroup.enter()
+                queue.async {
+                    bloodPressureSystolicSampleInfo = _getInfo(array: bloodPressureSystolicSamples)
+                    sampleInfoGroup.leave()
+                }
+                
+                sampleInfoGroup.enter()
+                queue.async {
+                    bloodPressureDiastolicSampleInfo = _getInfo(array: bloodPressureDiastolicSamples)
+                    sampleInfoGroup.leave()
+                }
+                
+                sampleInfoGroup.enter()
+                queue.async {
+                    bodyMassSampleInfo = _getInfo(array: bodyMassSamples)
                     sampleInfoGroup.leave()
                 }
                 
@@ -676,6 +851,24 @@ extension HealthManager {
                         for (_key, _array) in heartRateVariabilitySampleInfo {
                             if _key == key {
                                 model.addHrvDatas(_array)
+                            }
+                        }
+                        
+                        for (_key, _array) in bloodPressureSystolicSampleInfo {
+                            if _key == key {
+                                model.addBloodPressureSystolicDatas(_array)
+                            }
+                        }
+                        
+                        for (_key, _array) in bloodPressureDiastolicSampleInfo {
+                            if _key == key {
+                                model.addBloodPressureDiastolicDatas(_array)
+                            }
+                        }
+                        
+                        for (_key, _array) in bodyMassSampleInfo {
+                            if _key == key {
+                                model.addBodyMassDatas(_array)
                             }
                         }
                     }

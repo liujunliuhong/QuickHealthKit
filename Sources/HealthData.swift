@@ -34,6 +34,15 @@ public final class HealthData: Identifiable, Equatable {
     /// Step集合（数据未排序，需手动排序）
     public private(set) var stepDatas: [HKQuantitySample] = []
     
+    /// 高血压集合（数据未排序，需手动排序）
+    public private(set) var bloodPressureSystolicDatas: [HKQuantitySample] = []
+    
+    /// 低血压集合（数据未排序，需手动排序）
+    public private(set) var bloodPressureDiastolicDatas: [HKQuantitySample] = []
+    
+    /// 体重集合（数据未排序，需手动排序）
+    public private(set) var bodyMassDatas: [HKQuantitySample] = []
+    
     /// 过去的数据
     public internal(set) var pastDatas: [HealthData] = []
     
@@ -60,6 +69,18 @@ public final class HealthData: Identifiable, Equatable {
     
     public func addStepDatas(_ datas: [HKQuantitySample]) {
         self.stepDatas = datas
+    }
+    
+    public func addBloodPressureSystolicDatas(_ datas: [HKQuantitySample]) {
+        self.bloodPressureSystolicDatas = datas
+    }
+    
+    public func addBloodPressureDiastolicDatas(_ datas: [HKQuantitySample]) {
+        self.bloodPressureDiastolicDatas = datas
+    }
+    
+    public func addBodyMassDatas(_ datas: [HKQuantitySample]) {
+        self.bodyMassDatas = datas
     }
     
     /// 平均HRV。如果为nil，表示无数据
