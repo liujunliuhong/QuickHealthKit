@@ -90,4 +90,37 @@ public struct HealthSampleType {
         }
         return _type_
     }
+    
+    /// 身高
+    public static var height: HKQuantityType {
+        let _type_: HKQuantityType
+        if #available(iOS 15.0, watchOS 8.0, *) {
+            _type_ = HKQuantityType(.height)
+        } else {
+            _type_ = HKObjectType.quantityType(forIdentifier: .height)!
+        }
+        return _type_
+    }
+    
+    /// 性别
+    public static var sex: HKCharacteristicType {
+        let _type_: HKCharacteristicType
+        if #available(iOS 15.0, watchOS 8.0, *) {
+            _type_ = HKCharacteristicType(.biologicalSex)
+        } else {
+            _type_ = HKQuantityType.characteristicType(forIdentifier: .biologicalSex)!
+        }
+        return _type_
+    }
+    
+    /// 出生日期
+    public static var dateOfBirth: HKCharacteristicType {
+        let _type_: HKCharacteristicType
+        if #available(iOS 15.0, watchOS 8.0, *) {
+            _type_ = HKCharacteristicType(.dateOfBirth)
+        } else {
+            _type_ = HKQuantityType.characteristicType(forIdentifier: .dateOfBirth)!
+        }
+        return _type_
+    }
 }

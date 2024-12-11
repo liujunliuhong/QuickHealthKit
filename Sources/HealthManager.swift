@@ -35,7 +35,7 @@ extension HealthManager {
 
 extension HealthManager {
     /// 请求健康权限
-    public func requestHealthAuthorization(with types: [HKSampleType], allowWrite: Bool = false, completion: ((_ success: Bool) -> Void)?) {
+    public func requestHealthAuthorization(with types: [HKObjectType], allowWrite: Bool = false, completion: ((_ success: Bool) -> Void)?) {
         queue.async {
             HealthLog.Log("Request HealthKit Authorization...")
             
@@ -45,9 +45,18 @@ extension HealthManager {
                 return
             }
             
-            let sampleTypes: Set<HKSampleType> = Set(types)
+            let newTypes: Set<HKObjectType> = Set(types)
             
-            HealthManager.default.healthStore.requestAuthorization(toShare: allowWrite ? sampleTypes : nil, read: sampleTypes) { success, error in
+            // 这儿要转换的原因：share的类型是HKSampleType，而read的类型是HKObjectType
+            // HKObjectType是基类
+            var sampleTypes: [HKSampleType] = []
+            for type in newTypes {
+                if let sampleType = type as? HKSampleType {
+                    sampleTypes.append(sampleType)
+                }
+            }
+            
+            HealthManager.default.healthStore.requestAuthorization(toShare: allowWrite ? Set(sampleTypes) : nil, read: newTypes) { success, error in
                 HealthLog.Log("Request HealthKit Authorization Error: \(error?.localizedDescription ?? "nil")")
                 completion?(success)
             }
@@ -463,6 +472,96 @@ extension HealthManager {
                 completion?(results)
             }
             HealthManager.default.healthStore.execute(query)
+        }
+    }
+    
+    /// 获取身高集合
+    public func requestHeights(startDate: Date, endDate: Date, ascending: Bool, completion: ((_ results: [HKQuantitySample]) -> Void)?) {
+        queue.async {
+            
+            let quantityType: HKQuantityType = HealthSampleType.height
+            
+            let predicate = HKQuery.predicateForSamples(withStart: startDate, end: endDate)
+            
+            let timeSortDescriptor = NSSortDescriptor(key: HKSampleSortIdentifierEndDate, ascending: ascending)
+            let sortDescriptors = [timeSortDescriptor]
+            
+            let query = HKSampleQuery(sampleType: quantityType,
+                                      predicate: predicate,
+                                      limit: HKObjectQueryNoLimit,
+                                      sortDescriptors: sortDescriptors) { _, results, error in
+                if let error = error {
+                    
+                    HealthLog.Log("=================================")
+                    HealthLog.Log("=================================")
+                    HealthLog.Log("查询\(startDate.toString(.custom("yyyy/MM/dd HH:mm"))) - \(endDate.toString(.custom("yyyy/MM/dd HH:mm")))【Height】失败: \(error.localizedDescription)")
+                    HealthLog.Log("=================================")
+                    HealthLog.Log("=================================")
+                    
+                    completion?([])
+                    return
+                }
+                
+                let results = (results ?? []).map { $0 as? HKQuantitySample }.compactMap { $0 }
+                
+                HealthLog.Log("=================================")
+                HealthLog.Log("=================================")
+                HealthLog.Log("查询\(startDate.toString(.custom("yyyy/MM/dd HH:mm"))) - \(endDate.toString(.custom("yyyy/MM/dd HH:mm")))【Height】成功，数量: \(results.count)")
+                HealthLog.Log("=================================")
+                HealthLog.Log("=================================")
+                
+                completion?(results)
+            }
+            HealthManager.default.healthStore.execute(query)
+        }
+    }
+    
+    /// 获取性别
+    public func requestSex() -> HKBiologicalSex? {
+        do {
+            let sexType = try HealthManager.default.healthStore.biologicalSex().biologicalSex
+            HealthLog.Log("=================================")
+            HealthLog.Log("=================================")
+            HealthLog.Log("查询【Sex】成功：\(sexType)")
+            HealthLog.Log("=================================")
+            HealthLog.Log("=================================")
+            return sexType
+        } catch {
+            HealthLog.Log("=================================")
+            HealthLog.Log("=================================")
+            HealthLog.Log("查询【Sex】失败: \(error.localizedDescription)")
+            HealthLog.Log("=================================")
+            HealthLog.Log("=================================")
+            return nil
+        }
+    }
+    
+    /// 请求出生日期
+    public func requestDateOfBirth() -> Date? {
+        do {
+            if let dateOfBirth = try HealthManager.default.healthStore.dateOfBirthComponents().date {
+                let msg = dateOfBirth.toString(.custom("yyyy-MM-dd HH:mm:ss"))
+                HealthLog.Log("=================================")
+                HealthLog.Log("=================================")
+                HealthLog.Log("查询【DateOfBirth】成功：\(msg)")
+                HealthLog.Log("=================================")
+                HealthLog.Log("=================================")
+                return dateOfBirth
+            } else {
+                HealthLog.Log("=================================")
+                HealthLog.Log("=================================")
+                HealthLog.Log("查询【DateOfBirth】失败：nil")
+                HealthLog.Log("=================================")
+                HealthLog.Log("=================================")
+                return nil
+            }
+        } catch {
+            HealthLog.Log("=================================")
+            HealthLog.Log("=================================")
+            HealthLog.Log("查询【DateOfBirth】失败: \(error.localizedDescription)")
+            HealthLog.Log("=================================")
+            HealthLog.Log("=================================")
+            return nil
         }
     }
 }
