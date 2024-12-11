@@ -477,6 +477,9 @@ extension HealthManager {
                                   allowRequestHR: Bool,
                                   allowRequestRHR: Bool,
                                   allowRequestStep: Bool,
+                                  allowRequestBloodPressureSystolic: Bool = false,
+                                  allowRequestBloodPressureDiastolic: Bool = false,
+                                  allowRequestBodyMass: Bool = false,
                                   ascending: Bool,
                                   completion: ((_ healthData: HealthData) -> Void)?) {
         let date = DateInRegion(year: year, month: month, day: day).date
@@ -486,6 +489,9 @@ extension HealthManager {
                                                 allowRequestHR: allowRequestHR,
                                                 allowRequestRHR: allowRequestRHR,
                                                 allowRequestStep: allowRequestStep,
+                                                allowRequestBloodPressureSystolic: allowRequestBloodPressureSystolic,
+                                                allowRequestBloodPressureDiastolic: allowRequestBloodPressureDiastolic,
+                                                allowRequestBodyMass: allowRequestBodyMass,
                                                 ascending: ascending,
                                                 completion: completion)
     }
@@ -497,6 +503,9 @@ extension HealthManager {
                                   allowRequestHR: Bool,
                                   allowRequestRHR: Bool,
                                   allowRequestStep: Bool,
+                                  allowRequestBloodPressureSystolic: Bool = false,
+                                  allowRequestBloodPressureDiastolic: Bool = false,
+                                  allowRequestBodyMass: Bool = false,
                                   ascending: Bool,
                                   completion: ((_ healthData: HealthData) -> Void)?) {
         let startDate = date.dateAt(.startOfDay).date // 00:00:00 - 零时
@@ -508,6 +517,9 @@ extension HealthManager {
                                                  allowRequestHR: allowRequestHR,
                                                  allowRequestRHR: allowRequestRHR,
                                                  allowRequestStep: allowRequestStep,
+                                                 allowRequestBloodPressureSystolic: allowRequestBloodPressureSystolic,
+                                                 allowRequestBloodPressureDiastolic: allowRequestBloodPressureDiastolic,
+                                                 allowRequestBodyMass: allowRequestBodyMass,
                                                  ascending: ascending) { healthDatas in
             completion?(healthDatas.first!)
         }
@@ -516,11 +528,14 @@ extension HealthManager {
     /// 请求健康数据
     public func requestHealthDatas(startDate: Date,
                                    endDate: Date,
-                                   allowRequestHRV: Bool,
-                                   allowRequestHRVOtherData: Bool,
-                                   allowRequestHR: Bool,
-                                   allowRequestRHR: Bool,
-                                   allowRequestStep: Bool,
+                                   allowRequestHRV: Bool = false,
+                                   allowRequestHRVOtherData: Bool = false,
+                                   allowRequestHR: Bool = false,
+                                   allowRequestRHR: Bool = false,
+                                   allowRequestStep: Bool = false,
+                                   allowRequestBloodPressureSystolic: Bool = false,
+                                   allowRequestBloodPressureDiastolic: Bool = false,
+                                   allowRequestBodyMass: Bool = false,
                                    ascending: Bool,
                                    completion: ((_ healthDatas: [HealthData]) -> Void)?) {
         queue.async {
@@ -552,6 +567,9 @@ extension HealthManager {
                                                        allowRequestHR: allowRequestHR,
                                                        allowRequestRHR: allowRequestRHR,
                                                        allowRequestStep: allowRequestStep,
+                                                       allowRequestBloodPressureSystolic: allowRequestBloodPressureSystolic,
+                                                       allowRequestBloodPressureDiastolic: allowRequestBloodPressureDiastolic,
+                                                       allowRequestBodyMass: allowRequestBodyMass,
                                                        ascending: ascending) { healthDatas in
                 _normalHealthDatas = healthDatas
                 group.leave()
@@ -567,6 +585,9 @@ extension HealthManager {
                                                        allowRequestHR: allowRequestHR,
                                                        allowRequestRHR: allowRequestRHR,
                                                        allowRequestStep: allowRequestStep,
+                                                       allowRequestBloodPressureSystolic: allowRequestBloodPressureSystolic,
+                                                       allowRequestBloodPressureDiastolic: allowRequestBloodPressureDiastolic,
+                                                       allowRequestBodyMass: allowRequestBodyMass,
                                                        ascending: ascending) { healthDatas in
                 _newHealthDatas = healthDatas
                 group.leave()
@@ -617,8 +638,8 @@ extension HealthManager {
                                       allowRequestHR: Bool = false,
                                       allowRequestRHR: Bool = false,
                                       allowRequestStep: Bool = false,
-                                      allowResquestBloodPressureSystolic: Bool = false,
-                                      allowResquestBloodPressureDiastolic: Bool = false,
+                                      allowRequestBloodPressureSystolic: Bool = false,
+                                      allowRequestBloodPressureDiastolic: Bool = false,
                                       allowRequestBodyMass: Bool = false,
                                       ascending: Bool,
                                       completion: ((_ healthDatas: [HealthData]) -> Void)?) {
@@ -691,7 +712,7 @@ extension HealthManager {
                 }
             }
             
-            if allowResquestBloodPressureSystolic {
+            if allowRequestBloodPressureSystolic {
                 group.enter()
                 HealthManager.default.requestBloodPressureSystolics(startDate: startDate, endDate: endDate, ascending: ascending) { results in
                     bloodPressureSystolicSamples = results
@@ -699,7 +720,7 @@ extension HealthManager {
                 }
             }
             
-            if allowResquestBloodPressureDiastolic {
+            if allowRequestBloodPressureDiastolic {
                 group.enter()
                 HealthManager.default.requestBloodPressureDiastolics(startDate: startDate, endDate: endDate, ascending: ascending) { results in
                     bloodPressureDiastolicSamples = results
