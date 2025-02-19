@@ -123,4 +123,26 @@ public struct HealthSampleType {
         }
         return _type_
     }
+    
+    /// Insulin
+    public static var insulin: HKQuantityType {
+        let _type_: HKQuantityType
+        if #available(iOS 15.0, watchOS 8.0, *) {
+            _type_ = HKQuantityType(.insulinDelivery)
+        } else {
+            _type_ = HKObjectType.quantityType(forIdentifier: .insulinDelivery)!
+        }
+        return _type_
+    }
+    
+    /// Blood Glucose
+    public static var bloodGlucose: HKQuantityType {
+        let _type_: HKQuantityType
+        if #available(iOS 15.0, watchOS 8.0, *) {
+            _type_ = HKQuantityType(.bloodGlucose)
+        } else {
+            _type_ = HKObjectType.quantityType(forIdentifier: .bloodGlucose)!
+        }
+        return _type_
+    }
 }

@@ -564,6 +564,88 @@ extension HealthManager {
             return nil
         }
     }
+    
+    /// 获取胰岛素
+    public func requestInsulin(startDate: Date, endDate: Date, ascending: Bool, completion: ((_ results: [HKQuantitySample]) -> Void)?) {
+        queue.async {
+            
+            let quantityType: HKQuantityType = HealthSampleType.insulin
+            
+            let predicate = HKQuery.predicateForSamples(withStart: startDate, end: endDate)
+            
+            let timeSortDescriptor = NSSortDescriptor(key: HKSampleSortIdentifierEndDate, ascending: ascending)
+            let sortDescriptors = [timeSortDescriptor]
+            
+            let query = HKSampleQuery(sampleType: quantityType,
+                                      predicate: predicate,
+                                      limit: HKObjectQueryNoLimit,
+                                      sortDescriptors: sortDescriptors) { _, results, error in
+                if let error = error {
+                    
+                    HealthLog.Log("=================================")
+                    HealthLog.Log("=================================")
+                    HealthLog.Log("查询\(startDate.toString(.custom("yyyy/MM/dd HH:mm"))) - \(endDate.toString(.custom("yyyy/MM/dd HH:mm")))【Insulin】失败: \(error.localizedDescription)")
+                    HealthLog.Log("=================================")
+                    HealthLog.Log("=================================")
+                    
+                    completion?([])
+                    return
+                }
+                
+                let results = (results ?? []).map { $0 as? HKQuantitySample }.compactMap { $0 }
+                
+                HealthLog.Log("=================================")
+                HealthLog.Log("=================================")
+                HealthLog.Log("查询\(startDate.toString(.custom("yyyy/MM/dd HH:mm"))) - \(endDate.toString(.custom("yyyy/MM/dd HH:mm")))【Insulin】成功，数量: \(results.count)")
+                HealthLog.Log("=================================")
+                HealthLog.Log("=================================")
+                
+                completion?(results)
+            }
+            HealthManager.default.healthStore.execute(query)
+        }
+    }
+    
+    /// 获取血糖
+    public func requestBloodGlucose(startDate: Date, endDate: Date, ascending: Bool, completion: ((_ results: [HKQuantitySample]) -> Void)?) {
+        queue.async {
+            
+            let quantityType: HKQuantityType = HealthSampleType.bloodGlucose
+            
+            let predicate = HKQuery.predicateForSamples(withStart: startDate, end: endDate)
+            
+            let timeSortDescriptor = NSSortDescriptor(key: HKSampleSortIdentifierEndDate, ascending: ascending)
+            let sortDescriptors = [timeSortDescriptor]
+            
+            let query = HKSampleQuery(sampleType: quantityType,
+                                      predicate: predicate,
+                                      limit: HKObjectQueryNoLimit,
+                                      sortDescriptors: sortDescriptors) { _, results, error in
+                if let error = error {
+                    
+                    HealthLog.Log("=================================")
+                    HealthLog.Log("=================================")
+                    HealthLog.Log("查询\(startDate.toString(.custom("yyyy/MM/dd HH:mm"))) - \(endDate.toString(.custom("yyyy/MM/dd HH:mm")))【Blood Glucose】失败: \(error.localizedDescription)")
+                    HealthLog.Log("=================================")
+                    HealthLog.Log("=================================")
+                    
+                    completion?([])
+                    return
+                }
+                
+                let results = (results ?? []).map { $0 as? HKQuantitySample }.compactMap { $0 }
+                
+                HealthLog.Log("=================================")
+                HealthLog.Log("=================================")
+                HealthLog.Log("查询\(startDate.toString(.custom("yyyy/MM/dd HH:mm"))) - \(endDate.toString(.custom("yyyy/MM/dd HH:mm")))【Blood Glucose】成功，数量: \(results.count)")
+                HealthLog.Log("=================================")
+                HealthLog.Log("=================================")
+                
+                completion?(results)
+            }
+            HealthManager.default.healthStore.execute(query)
+        }
+    }
 }
 
 extension HealthManager {
@@ -579,6 +661,8 @@ extension HealthManager {
                                   allowRequestBloodPressureSystolic: Bool = false,
                                   allowRequestBloodPressureDiastolic: Bool = false,
                                   allowRequestBodyMass: Bool = false,
+                                  allowRequestInsulin: Bool = false,
+                                  allowRequestBloodGlucose: Bool = false,
                                   ascending: Bool,
                                   completion: ((_ healthData: HealthData) -> Void)?) {
         let date = DateInRegion(year: year, month: month, day: day).date
@@ -591,6 +675,8 @@ extension HealthManager {
                                                 allowRequestBloodPressureSystolic: allowRequestBloodPressureSystolic,
                                                 allowRequestBloodPressureDiastolic: allowRequestBloodPressureDiastolic,
                                                 allowRequestBodyMass: allowRequestBodyMass,
+                                                allowRequestInsulin: allowRequestInsulin,
+                                                allowRequestBloodGlucose: allowRequestBloodGlucose,
                                                 ascending: ascending,
                                                 completion: completion)
     }
@@ -605,6 +691,8 @@ extension HealthManager {
                                   allowRequestBloodPressureSystolic: Bool = false,
                                   allowRequestBloodPressureDiastolic: Bool = false,
                                   allowRequestBodyMass: Bool = false,
+                                  allowRequestInsulin: Bool = false,
+                                  allowRequestBloodGlucose: Bool = false,
                                   ascending: Bool,
                                   completion: ((_ healthData: HealthData) -> Void)?) {
         let startDate = date.dateAt(.startOfDay).date // 00:00:00 - 零时
@@ -619,6 +707,8 @@ extension HealthManager {
                                                  allowRequestBloodPressureSystolic: allowRequestBloodPressureSystolic,
                                                  allowRequestBloodPressureDiastolic: allowRequestBloodPressureDiastolic,
                                                  allowRequestBodyMass: allowRequestBodyMass,
+                                                 allowRequestInsulin: allowRequestInsulin,
+                                                 allowRequestBloodGlucose: allowRequestBloodGlucose,
                                                  ascending: ascending) { healthDatas in
             completion?(healthDatas.first!)
         }
@@ -635,6 +725,8 @@ extension HealthManager {
                                    allowRequestBloodPressureSystolic: Bool = false,
                                    allowRequestBloodPressureDiastolic: Bool = false,
                                    allowRequestBodyMass: Bool = false,
+                                   allowRequestInsulin: Bool = false,
+                                   allowRequestBloodGlucose: Bool = false,
                                    ascending: Bool,
                                    completion: ((_ healthDatas: [HealthData]) -> Void)?) {
         queue.async {
@@ -669,6 +761,8 @@ extension HealthManager {
                                                        allowRequestBloodPressureSystolic: allowRequestBloodPressureSystolic,
                                                        allowRequestBloodPressureDiastolic: allowRequestBloodPressureDiastolic,
                                                        allowRequestBodyMass: allowRequestBodyMass,
+                                                       allowRequestInsulin: allowRequestInsulin,
+                                                       allowRequestBloodGlucose: allowRequestBloodGlucose,
                                                        ascending: ascending) { healthDatas in
                 _normalHealthDatas = healthDatas
                 group.leave()
@@ -687,6 +781,8 @@ extension HealthManager {
                                                        allowRequestBloodPressureSystolic: allowRequestBloodPressureSystolic,
                                                        allowRequestBloodPressureDiastolic: allowRequestBloodPressureDiastolic,
                                                        allowRequestBodyMass: allowRequestBodyMass,
+                                                       allowRequestInsulin: allowRequestInsulin,
+                                                       allowRequestBloodGlucose: allowRequestBloodGlucose,
                                                        ascending: ascending) { healthDatas in
                 _newHealthDatas = healthDatas
                 group.leave()
@@ -740,6 +836,8 @@ extension HealthManager {
                                       allowRequestBloodPressureSystolic: Bool = false,
                                       allowRequestBloodPressureDiastolic: Bool = false,
                                       allowRequestBodyMass: Bool = false,
+                                      allowRequestInsulin: Bool = false,
+                                      allowRequestBloodGlucose: Bool = false,
                                       ascending: Bool,
                                       completion: ((_ healthDatas: [HealthData]) -> Void)?) {
         queue.async {
@@ -762,6 +860,9 @@ extension HealthManager {
             var bloodPressureSystolicSamples: [HKQuantitySample] = []
             var bloodPressureDiastolicSamples: [HKQuantitySample] = []
             var bodyMassSamples: [HKQuantitySample] = []
+            
+            var insulinSamples: [HKQuantitySample] = []
+            var bloodGlucoseSamples: [HKQuantitySample] = []
             
             let group = DispatchGroup()
             
@@ -833,6 +934,20 @@ extension HealthManager {
                     group.leave()
                 }
             }
+            if allowRequestInsulin {
+                group.enter()
+                HealthManager.default.requestInsulin(startDate: startDate, endDate: endDate, ascending: ascending) { results in
+                    insulinSamples = results
+                    group.leave()
+                }
+            }
+            if allowRequestBloodGlucose {
+                group.enter()
+                HealthManager.default.requestBloodGlucose(startDate: startDate, endDate: endDate, ascending: ascending) { results in
+                    bloodGlucoseSamples = results
+                    group.leave()
+                }
+            }
             
             group.notify(queue: queue) {
                 
@@ -901,6 +1016,9 @@ extension HealthManager {
                 var bloodPressureDiastolicSampleInfo: [String: [HKQuantitySample]] = [:]
                 var bodyMassSampleInfo: [String: [HKQuantitySample]] = [:]
                 
+                var insulinSampleInfo: [String: [HKQuantitySample]] = [:]
+                var bloodGlucoseSampleInfo: [String: [HKQuantitySample]] = [:]
+                
                 let sampleInfoGroup = DispatchGroup()
                 
                 sampleInfoGroup.enter()
@@ -942,6 +1060,18 @@ extension HealthManager {
                 sampleInfoGroup.enter()
                 queue.async {
                     bodyMassSampleInfo = _getInfo(array: bodyMassSamples)
+                    sampleInfoGroup.leave()
+                }
+                
+                sampleInfoGroup.enter()
+                queue.async {
+                    insulinSampleInfo = _getInfo(array: insulinSamples)
+                    sampleInfoGroup.leave()
+                }
+                
+                sampleInfoGroup.enter()
+                queue.async {
+                    bloodGlucoseSampleInfo = _getInfo(array: bloodGlucoseSamples)
                     sampleInfoGroup.leave()
                 }
                 
@@ -989,6 +1119,18 @@ extension HealthManager {
                         for (_key, _array) in bodyMassSampleInfo {
                             if _key == key {
                                 model.addBodyMassDatas(_array)
+                            }
+                        }
+                        
+                        for (_key, _array) in insulinSampleInfo {
+                            if _key == key {
+                                model.addInsulinDatas(_array)
+                            }
+                        }
+                        
+                        for (_key, _array) in bloodGlucoseSampleInfo {
+                            if _key == key {
+                                model.addBloodGlucoseDatas(_array)
                             }
                         }
                     }

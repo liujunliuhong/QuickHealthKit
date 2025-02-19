@@ -14,22 +14,30 @@ private let cmUnit = HKUnit.meterUnit(with: .centi)
 private let hrvUnit = HKUnit.secondUnit(with: .milli)
 private let heartUnit = HKUnit.count().unitDivided(by: HKUnit.minute())
 private let stepCountUnit = HKUnit.count()
+private let internationalUnit = HKUnit.internationalUnit()
+private let mmol_l_unit = HKUnit.moleUnit(withMolarMass: HKUnitMolarMassBloodGlucose)
 
+private let decimalNumberHandler_1 = NSDecimalNumberHandler(roundingMode: .plain,
+                                                            scale: 1,
+                                                            raiseOnExactness: false,
+                                                            raiseOnOverflow: false,
+                                                            raiseOnUnderflow: false,
+                                                            raiseOnDivideByZero: false)
 
 extension HKQuantitySample {
-    /// 获取HRV
+    /// 获取HRV(ms)
     public var hrv: Int {
         let value = quantity.doubleValue(for: hrvUnit)
         return Int(round(value))
     }
     
-    /// 获取心率
+    /// 获取心率(BPM)
     public var hr: Int {
         let value = quantity.doubleValue(for: heartUnit)
         return Int(round(value))
     }
     
-    /// 获取静心心率
+    /// 获取静心心率(BPM)
     public var rhr: Int {
         let value = quantity.doubleValue(for: heartUnit)
         return Int(round(value))
@@ -45,7 +53,7 @@ extension HKQuantitySample {
         return quantity.doubleValue(for: kgUnit)
     }
     
-    /// 获取血压(最高血压、最低血压)
+    /// 获取血压(最高血压、最低血压) (mmHg)
     public var bloodPressure: Double {
         return quantity.doubleValue(for: mmHgUnit)
     }
@@ -54,6 +62,18 @@ extension HKQuantitySample {
     public var stepCount: Int {
         let value = quantity.doubleValue(for: stepCountUnit)
         return Int(round(value))
+    }
+    
+    /// 获取胰岛素(IU)
+    public var insulin: NSDecimalNumber {
+        let value = quantity.doubleValue(for: internationalUnit)
+        return NSDecimalNumber(value: value).rounding(accordingToBehavior: decimalNumberHandler_1)
+    }
+    
+    /// 获取血糖(mmol/L)
+    public var bloodGlucoseMmol: NSDecimalNumber {
+        let value = quantity.doubleValue(for: mmol_l_unit)
+        return NSDecimalNumber(value: value).rounding(accordingToBehavior: decimalNumberHandler_1)
     }
 }
 
@@ -135,6 +155,26 @@ extension Array where Element == HKQuantitySample {
         let total = reduce(0, { $0 + $1.hr })
         let result = Double(total) / Double(count)
         return Int(round(result))
+    }
+    
+    /// 获取平均胰岛素
+    public var avgInsulin: NSDecimalNumber? {
+        if isEmpty {
+            return nil
+        }
+        let total = reduce(NSDecimalNumber.zero, { $0.adding($1.insulin, withBehavior: decimalNumberHandler_1) })
+        let result = total.dividing(by: NSDecimalNumber(value: count), withBehavior: decimalNumberHandler_1)
+        return result
+    }
+    
+    /// 获取平均血糖
+    public var avgBloodGlucoseMmol: NSDecimalNumber? {
+        if isEmpty {
+            return nil
+        }
+        let total = reduce(NSDecimalNumber.zero, { $0.adding($1.bloodGlucoseMmol, withBehavior: decimalNumberHandler_1) })
+        let result = total.dividing(by: NSDecimalNumber(value: count), withBehavior: decimalNumberHandler_1)
+        return result
     }
     
     /// HR范围

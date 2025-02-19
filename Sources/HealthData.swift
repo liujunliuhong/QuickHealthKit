@@ -43,6 +43,12 @@ public final class HealthData: Identifiable, Equatable {
     /// 体重集合（数据未排序，需手动排序）
     public private(set) var bodyMassDatas: [HKQuantitySample] = []
     
+    /// 胰岛素集合（数据未排序，需手动排序）
+    public private(set) var insulinDatas: [HKQuantitySample] = []
+    
+    /// 血糖集合（数据未排序，需手动排序）
+    public private(set) var bloodGlucoseDatas: [HKQuantitySample] = []
+    
     /// 过去的数据
     public internal(set) var pastDatas: [HealthData] = []
     
@@ -83,6 +89,14 @@ public final class HealthData: Identifiable, Equatable {
         self.bodyMassDatas = datas
     }
     
+    public func addInsulinDatas(_ datas: [HKQuantitySample]) {
+        self.insulinDatas = datas
+    }
+    
+    public func addBloodGlucoseDatas(_ datas: [HKQuantitySample]) {
+        self.bloodGlucoseDatas = datas
+    }
+    
     /// 平均HRV。如果为nil，表示无数据
     public var avgHRV: Int? {
         return hrvDatas.avgHRV
@@ -121,6 +135,16 @@ public final class HealthData: Identifiable, Equatable {
     /// 获取步数范围
     public var stepRange: (min: Int, max: Int)? {
         return stepDatas.stepRange
+    }
+    
+    /// 获取平均胰岛素。如果为nil，表示无数据
+    public var avgInsulin: NSDecimalNumber? {
+        return insulinDatas.avgInsulin
+    }
+    
+    /// 获取平均血糖。如果为nil，表示无数据
+    public var avgBloodGlucoseMmol: NSDecimalNumber? {
+        return bloodGlucoseDatas.avgBloodGlucoseMmol
     }
     
     public var avgOtherData: HealthOtherData? {
@@ -257,6 +281,18 @@ extension Array where Element == HealthData {
         return (values.min()!, values.max()!)
     }
     
+    /// 获取平均胰岛素。如果为nil，表示无数据
+    public var avgInsulin: NSDecimalNumber? {
+        let values = map { $0.avgInsulin }.compactMap { $0 }
+        return _avg_(decimalNumberValues: values, scale: 1)
+    }
+    
+    /// 获取平均血糖。如果为nil，表示无数据
+    public var avgBloodGlucoseMmol: NSDecimalNumber? {
+        let values = map { $0.avgBloodGlucoseMmol }.compactMap { $0 }
+        return _avg_(decimalNumberValues: values, scale: 1)
+    }
+    
     public var avgOtherData: HealthOtherData? {
         let otherDatas = map { $0.avgOtherData }.compactMap { $0 }
         
@@ -303,4 +339,23 @@ private func _avg_(values: [Double]) -> Double? {
     }
     let sum = values.reduce(0, { $0 + $1 })
     return sum / CGFloat(values.count)
+}
+
+private func _avg_(decimalNumberValues: [NSDecimalNumber], scale: Int16) -> NSDecimalNumber? {
+    if decimalNumberValues.isEmpty {
+        return nil
+    }
+    
+    let decimalNumberHandler = NSDecimalNumberHandler(roundingMode: .plain,
+                                                      scale: scale,
+                                                      raiseOnExactness: false,
+                                                      raiseOnOverflow: false,
+                                                      raiseOnUnderflow: false,
+                                                      raiseOnDivideByZero: false)
+    
+    let total = decimalNumberValues.reduce(NSDecimalNumber.zero, { $0.adding($1, withBehavior: decimalNumberHandler) })
+    
+    let result = total.dividing(by: NSDecimalNumber(value: decimalNumberValues.count), withBehavior: decimalNumberHandler)
+    
+    return result
 }
