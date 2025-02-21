@@ -15,7 +15,7 @@ private let hrvUnit = HKUnit.secondUnit(with: .milli)
 private let heartUnit = HKUnit.count().unitDivided(by: HKUnit.minute())
 private let stepCountUnit = HKUnit.count()
 private let internationalUnit = HKUnit.internationalUnit()
-private let mmol_l_unit = HKUnit.moleUnit(withMolarMass: HKUnitMolarMassBloodGlucose)
+private let mmol_l_unit = HKUnit.moleUnit(with: HKMetricPrefix.milli, molarMass: HKUnitMolarMassBloodGlucose).unitDivided(by: HKUnit.liter())
 
 private let decimalNumberHandler_1 = NSDecimalNumberHandler(roundingMode: .plain,
                                                             scale: 1,
