@@ -22,8 +22,8 @@ public final class HealthData: Identifiable, Equatable {
     /// 结束日期
     public let endDate: Date
     
-    /// HRV集合（数据未排序，需手动排序）
-    public private(set) var hrvDatas: [HKQuantitySample] = []
+    /// SDNN集合（数据未排序，需手动排序）
+    public private(set) var sdnnDatas: [HKQuantitySample] = []
     
     /// HR集合（数据未排序，需手动排序）
     public private(set) var hrDatas: [HKQuantitySample] = []
@@ -49,9 +49,6 @@ public final class HealthData: Identifiable, Equatable {
     /// 血糖集合（数据未排序，需手动排序）
     public private(set) var bloodGlucoseDatas: [HKQuantitySample] = []
     
-    /// 过去的数据
-    public internal(set) var pastDatas: [HealthData] = []
-    
     public var displayDate: Date {
         return endDate
     }
@@ -61,8 +58,8 @@ public final class HealthData: Identifiable, Equatable {
         self.endDate = endDate
     }
     
-    public func addHrvDatas(_ datas: [HKQuantitySample]) {
-        self.hrvDatas = datas
+    public func addSDNNDatas(_ datas: [HKQuantitySample]) {
+        self.sdnnDatas = datas
     }
     
     public func addHrDatas(_ datas: [HKQuantitySample]) {
@@ -97,14 +94,14 @@ public final class HealthData: Identifiable, Equatable {
         self.bloodGlucoseDatas = datas
     }
     
-    /// 平均HRV。如果为nil，表示无数据
-    public var avgHRV: Int? {
-        return hrvDatas.avgHRV
+    /// 平均SDNN。如果为nil，表示无数据
+    public var avgSDNN: Int? {
+        return sdnnDatas.avgSDNN
     }
     
-    /// 获取HRV范围
-    public var hrvRange: (min: Int, max: Int)? {
-        return hrvDatas.hrvRange
+    /// 获取sdnn范围
+    public var sdnnRange: (min: Int, max: Int)? {
+        return sdnnDatas.sdnnRange
     }
     
     /// 获取平均HR。如果为nil，表示无数据
@@ -148,7 +145,7 @@ public final class HealthData: Identifiable, Equatable {
     }
     
     public var avgOtherData: HealthOtherData? {
-        let otherDatas = hrvDatas.map { $0.otherData }.compactMap { $0 }
+        let otherDatas = sdnnDatas.map { $0.otherData }.compactMap { $0 }
         
         if otherDatas.isEmpty {
             return nil
@@ -213,18 +210,18 @@ extension HKQuantitySample {
 }
 
 extension Array where Element == HealthData {
-    /// 平均HRV。如果为nil，表示无数据
-    public var avgHRV: Int? {
-        let values = map { $0.avgHRV }.compactMap { $0 }.map { Double($0) }
+    /// 平均SDNN。如果为nil，表示无数据
+    public var avgSDNN: Int? {
+        let values = map { $0.avgSDNN }.compactMap { $0 }.map { Double($0) }
         if let avg = _avg_(values: values) {
             return Int(avg)
         }
         return nil
     }
     
-    /// 获取HRV范围
-    public var hrvRange: (min: Int, max: Int)? {
-        let values = map { $0.avgHRV }.compactMap { $0 }
+    /// 获取SDNN范围
+    public var sdnnRange: (min: Int, max: Int)? {
+        let values = map { $0.avgSDNN }.compactMap { $0 }
         if values.isEmpty {
             return nil
         }

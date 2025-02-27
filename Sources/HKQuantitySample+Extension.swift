@@ -11,7 +11,7 @@ import HealthKit
 private let mmHgUnit = HKUnit.millimeterOfMercury()
 private let kgUnit = HKUnit.gramUnit(with: .kilo)
 private let cmUnit = HKUnit.meterUnit(with: .centi)
-private let hrvUnit = HKUnit.secondUnit(with: .milli)
+private let sdnnUnit = HKUnit.secondUnit(with: .milli)
 private let heartUnit = HKUnit.count().unitDivided(by: HKUnit.minute())
 private let stepCountUnit = HKUnit.count()
 private let internationalUnit = HKUnit.internationalUnit()
@@ -25,9 +25,9 @@ private let decimalNumberHandler_1 = NSDecimalNumberHandler(roundingMode: .plain
                                                             raiseOnDivideByZero: false)
 
 extension HKQuantitySample {
-    /// 获取HRV(ms)
-    public var hrv: Int {
-        let value = quantity.doubleValue(for: hrvUnit)
+    /// 获取SDNN(ms)
+    public var sdnn: Int {
+        let value = quantity.doubleValue(for: sdnnUnit)
         return Int(round(value))
     }
     
@@ -86,10 +86,10 @@ extension HKQuantitySample {
 
 extension HKQuantitySample {
     
-    /// 根据HRV构造一个`HKQuantitySample`对象
-    public static func getQuantitySample(hrv: Int, date: Date) -> HKQuantitySample {
+    /// 根据SDNN构造一个`HKQuantitySample`对象
+    public static func getQuantitySample(sdnn: Int, date: Date) -> HKQuantitySample {
         let type = HealthSampleType.heartRateVariabilitySDNN
-        let quantity = HKQuantity(unit: hrvUnit, doubleValue: Double(hrv))
+        let quantity = HKQuantity(unit: sdnnUnit, doubleValue: Double(sdnn))
         return HKQuantitySample(type: type,
                                 quantity: quantity,
                                 start: date,
@@ -128,22 +128,22 @@ extension HKQuantitySample {
 }
 
 extension Array where Element == HKQuantitySample {
-    /// 获取平均HRV
-    public var avgHRV: Int? {
+    /// 获取平均SDNN
+    public var avgSDNN: Int? {
         if isEmpty {
             return nil
         }
-        let total = reduce(0, { $0 + $1.hrv })
+        let total = reduce(0, { $0 + $1.sdnn })
         let result = Double(total) / Double(count)
         return Int(round(result))
     }
     
-    /// HRV范围
-    public var hrvRange: (min: Int, max: Int)? {
+    /// SDNN范围
+    public var sdnnRange: (min: Int, max: Int)? {
         if isEmpty {
             return nil
         }
-        let values = map { $0.hrv }
+        let values = map { $0.sdnn }
         return (values.min()!, values.max()!)
     }
     

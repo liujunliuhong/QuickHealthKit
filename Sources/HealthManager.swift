@@ -732,8 +732,6 @@ extension HealthManager {
         queue.async {
             let startTime = CFAbsoluteTimeGetCurrent()
             
-            let pastDayCount: Int = 30 // 过去30天
-            
             var startDate = startDate
             var endDate = endDate
             
@@ -741,16 +739,6 @@ extension HealthManager {
                 (startDate, endDate) = (endDate, startDate)
             }
             
-            // 往前推30天
-            let newStartDate = startDate.dateByAdding(-pastDayCount, .day).dateAt(.startOfDay).date
-            let newEndDate = startDate.dateByAdding(-1, .day).dateAt(.endOfDay).date
-            
-            var _normalHealthDatas: [HealthData] = []
-            var _newHealthDatas: [HealthData] = []
-            
-            let group = DispatchGroup()
-            
-            group.enter()
             HealthManager.default.__requestHealthDatas(startDate: startDate,
                                                        endDate: endDate,
                                                        allowRequestHRV: allowRequestHRV,
@@ -764,62 +752,12 @@ extension HealthManager {
                                                        allowRequestInsulin: allowRequestInsulin,
                                                        allowRequestBloodGlucose: allowRequestBloodGlucose,
                                                        ascending: ascending) { healthDatas in
-                _normalHealthDatas = healthDatas
-                group.leave()
-            }
-            
-            
-            
-            group.enter()
-            HealthManager.default.__requestHealthDatas(startDate: newStartDate,
-                                                       endDate: newEndDate,
-                                                       allowRequestHRV: allowRequestHRV,
-                                                       allowRequestHRVOtherData: allowRequestHRVOtherData,
-                                                       allowRequestHR: allowRequestHR,
-                                                       allowRequestRHR: allowRequestRHR,
-                                                       allowRequestStep: allowRequestStep,
-                                                       allowRequestBloodPressureSystolic: allowRequestBloodPressureSystolic,
-                                                       allowRequestBloodPressureDiastolic: allowRequestBloodPressureDiastolic,
-                                                       allowRequestBodyMass: allowRequestBodyMass,
-                                                       allowRequestInsulin: allowRequestInsulin,
-                                                       allowRequestBloodGlucose: allowRequestBloodGlucose,
-                                                       ascending: ascending) { healthDatas in
-                _newHealthDatas = healthDatas
-                group.leave()
-            }
-            
-            group.notify(queue: queue) {
-                var tempHealthDatas: [HealthData] = _normalHealthDatas
-                if ascending {
-                    tempHealthDatas.insert(contentsOf: _newHealthDatas, at: 0)
-                } else {
-                    tempHealthDatas.append(contentsOf: _newHealthDatas)
-                }
-                
-                if ascending {
-                    // 升序
-                    for (i, healthData) in tempHealthDatas.enumerated() {
-                        if i >= pastDayCount {
-                            let array = Array(tempHealthDatas[(i - pastDayCount)..<i])
-                            healthData.pastDatas = array
-                        }
-                    }
-                } else {
-                    // 降序
-                    for (i, healthData) in tempHealthDatas.enumerated() {
-                        if i - _normalHealthDatas.count < 0 {
-                            let array = Array(tempHealthDatas[(i + 1)..<(i + pastDayCount)])
-                            healthData.pastDatas = array
-                        }
-                    }
-                }
-                
                 let endTime = CFAbsoluteTimeGetCurrent()
                 
                 HealthLog.Log("HealthKit - 查询所有健康数据成功🎉🎉🎉🎉🎉")
                 HealthLog.Log("HealthKit - 查询所有健康数据耗时🎉🎉🎉🎉🎉: \(endTime - startTime)s")
                 
-                completion?(_normalHealthDatas)
+                completion?(healthDatas)
             }
         }
     }
@@ -1100,7 +1038,7 @@ extension HealthManager {
                         
                         for (_key, _array) in heartRateVariabilitySampleInfo {
                             if _key == key {
-                                model.addHrvDatas(_array)
+                                model.addSDNNDatas(_array)
                             }
                         }
                         
