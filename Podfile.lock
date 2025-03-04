@@ -1,16 +1,51 @@
 PODS:
+  - Alamofire (5.10.2)
+  - BigInt (5.2.0)
+  - CocoaLumberjack/Core (3.8.5)
+  - CocoaLumberjack/Swift (3.8.5):
+    - CocoaLumberjack/Core
+  - Galaxy (2.0.3):
+    - Alamofire
+    - BigInt
+    - CocoaLumberjack/Swift
+    - MBProgressHUD
+    - SnapKit
+  - MBProgressHUD (1.2.0)
+  - SnapKit (5.7.1)
   - SwiftDate (7.0.0)
 
 DEPENDENCIES:
+  - Galaxy (from `https://github.com/liujunliuhong/Galaxy.git`)
+  - SnapKit
   - SwiftDate
 
 SPEC REPOS:
   trunk:
+    - Alamofire
+    - BigInt
+    - CocoaLumberjack
+    - MBProgressHUD
+    - SnapKit
     - SwiftDate
 
+EXTERNAL SOURCES:
+  Galaxy:
+    :git: https://github.com/liujunliuhong/Galaxy.git
+
+CHECKOUT OPTIONS:
+  Galaxy:
+    :commit: 2077507d1e066e5f9b451a998e1a78a5558293fe
+    :git: https://github.com/liujunliuhong/Galaxy.git
+
 SPEC CHECKSUMS:
+  Alamofire: 7193b3b92c74a07f85569e1a6c4f4237291e7496
+  BigInt: f668a80089607f521586bbe29513d708491ef2f7
+  CocoaLumberjack: 6a459bc897d6d80bd1b8c78482ec7ad05dffc3f0
+  Galaxy: bdc3a3b41f4c8020e91b6834c7a8b75a5562b146
+  MBProgressHUD: 3ee5efcc380f6a79a7cc9b363dd669c5e1ae7406
+  SnapKit: d612e99e678a2d3b95bf60b0705ed0a35c03484a
   SwiftDate: bbc26e26fc8c0c33fbee8c140c5e8a68293a148a
 
-PODFILE CHECKSUM: 28892c916d90ddd83763e36b1a1c9c8b389ac680
+PODFILE CHECKSUM: 7a0a4b873c5e5ce607d9033ce9b69bc0a21c879c
 
 COCOAPODS: 1.16.2

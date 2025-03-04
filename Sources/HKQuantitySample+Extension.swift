@@ -222,16 +222,18 @@ extension Array where Element == HKQuantitySample {
         return (values.min()!, values.max()!)
     }
     
-    /// 排序（升序、降序）
+    /// 对`HKQuantitySample`集合排序（升序、降序）
     public func sort(ascending: Bool) -> [Element] {
-        return sorted { data1, data2 -> Bool in
-            if ascending {
+        if ascending {
+            return sorted { data1, data2 -> Bool in
                 if data1.displayDate > data2.displayDate {
                     return false
                 } else {
                     return true
                 }
-            } else {
+            }
+        } else {
+            return sorted { data1, data2 -> Bool in
                 if data1.displayDate < data2.displayDate {
                     return false
                 } else {

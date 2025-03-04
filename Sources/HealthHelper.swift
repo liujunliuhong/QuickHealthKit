@@ -42,6 +42,7 @@ extension HealthHelper {
     }
 }
 
+// let filtered = rrIntervals.filter { $0 > 300 && $0 < 2000 } // 过滤异常值
 private func computeRMSSD(intervals: [Double]) -> Int? {
     // 筛选出小于1000的数据
     let intervals = intervals.filter { $0 <= 1000.0 }

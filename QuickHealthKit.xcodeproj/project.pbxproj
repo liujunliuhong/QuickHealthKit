@@ -20,6 +20,7 @@
 		85EAACBD2C474E8B008E41F7 /* HealthLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85EAACB62C474E8B008E41F7 /* HealthLog.swift */; };
 		85EAACBE2C474E8B008E41F7 /* HealthData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85EAACB72C474E8B008E41F7 /* HealthData.swift */; };
 		85EAACBF2C474E8B008E41F7 /* HealthHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85EAACB82C474E8B008E41F7 /* HealthHelper.swift */; };
+		9237087C2D71896A00D37385 /* HealthRequestConfiguration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9237087B2D71896A00D37385 /* HealthRequestConfiguration.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -39,6 +40,8 @@
 		85EAACB62C474E8B008E41F7 /* HealthLog.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = HealthLog.swift; sourceTree = "<group>"; };
 		85EAACB72C474E8B008E41F7 /* HealthData.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = HealthData.swift; sourceTree = "<group>"; };
 		85EAACB82C474E8B008E41F7 /* HealthHelper.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = HealthHelper.swift; sourceTree = "<group>"; };
+		9237087B2D71896A00D37385 /* HealthRequestConfiguration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthRequestConfiguration.swift; sourceTree = "<group>"; };
+		928983D72D742CF300D96B17 /* QuickHealthKit.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = QuickHealthKit.entitlements; sourceTree = "<group>"; };
 		D48DBFB67CAA8E76AAB2AB05 /* Pods-QuickHealthKit.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-QuickHealthKit.debug.xcconfig"; path = "Target Support Files/Pods-QuickHealthKit/Pods-QuickHealthKit.debug.xcconfig"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -84,6 +87,7 @@
 		85EAAC9B2C474D8B008E41F7 /* QuickHealthKit */ = {
 			isa = PBXGroup;
 			children = (
+				928983D72D742CF300D96B17 /* QuickHealthKit.entitlements */,
 				85EAAC9C2C474D8B008E41F7 /* AppDelegate.swift */,
 				85EAACA02C474D8B008E41F7 /* ViewController.swift */,
 				85EAACA22C474D8B008E41F7 /* Main.storyboard */,
@@ -101,6 +105,7 @@
 				85EAACB32C474E8B008E41F7 /* HKQuantitySample+Extension.swift */,
 				85EAACB42C474E8B008E41F7 /* HealthSampleType.swift */,
 				85EAACB52C474E8B008E41F7 /* HealthManager.swift */,
+				9237087B2D71896A00D37385 /* HealthRequestConfiguration.swift */,
 				85EAACB62C474E8B008E41F7 /* HealthLog.swift */,
 				85EAACB72C474E8B008E41F7 /* HealthData.swift */,
 				85EAACB82C474E8B008E41F7 /* HealthHelper.swift */,
@@ -129,6 +134,7 @@
 				85EAAC962C474D8B008E41F7 /* Frameworks */,
 				85EAAC972C474D8B008E41F7 /* Resources */,
 				A68C4421E205A7657391FC5D /* [CP] Embed Pods Frameworks */,
+				AB6AF6F2177FCF997BB98FF4 /* [CP] Copy Pods Resources */,
 			);
 			buildRules = (
 			);
@@ -203,6 +209,23 @@
 			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-QuickHealthKit/Pods-QuickHealthKit-frameworks.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
+		AB6AF6F2177FCF997BB98FF4 /* [CP] Copy Pods Resources */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-QuickHealthKit/Pods-QuickHealthKit-resources-${CONFIGURATION}-input-files.xcfilelist",
+			);
+			name = "[CP] Copy Pods Resources";
+			outputFileListPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-QuickHealthKit/Pods-QuickHealthKit-resources-${CONFIGURATION}-output-files.xcfilelist",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-QuickHealthKit/Pods-QuickHealthKit-resources.sh\"\n";
+			showEnvVarsInLog = 0;
+		};
 		BB335B91C3086E644CACAD27 /* [CP] Check Pods Manifest.lock */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
@@ -236,6 +259,7 @@
 				85EAACBF2C474E8B008E41F7 /* HealthHelper.swift in Sources */,
 				85EAACBC2C474E8B008E41F7 /* HealthManager.swift in Sources */,
 				85EAACBD2C474E8B008E41F7 /* HealthLog.swift in Sources */,
+				9237087C2D71896A00D37385 /* HealthRequestConfiguration.swift in Sources */,
 				85EAACBE2C474E8B008E41F7 /* HealthData.swift in Sources */,
 				85EAAC9D2C474D8B008E41F7 /* AppDelegate.swift in Sources */,
 				85EAACBB2C474E8B008E41F7 /* HealthSampleType.swift in Sources */,
@@ -391,17 +415,22 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = QuickHealthKit/QuickHealthKit.entitlements;
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				CODE_SIGN_STYLE = Manual;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = "";
+				"DEVELOPMENT_TEAM[sdk=iphoneos*]" = 2E8NVCJR97;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = QuickHealthKit/Info.plist;
+				INFOPLIST_KEY_NSHealthShareUsageDescription = "we will use your health data.";
+				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "we will use your health data.";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UIMainStoryboardFile = Main;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -410,6 +439,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.galaxy.QuickHealthKit;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
+				"PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]" = quick_healthkit_dev;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -422,17 +452,22 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = QuickHealthKit/QuickHealthKit.entitlements;
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				CODE_SIGN_STYLE = Manual;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = "";
+				"DEVELOPMENT_TEAM[sdk=iphoneos*]" = 2E8NVCJR97;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = QuickHealthKit/Info.plist;
+				INFOPLIST_KEY_NSHealthShareUsageDescription = "we will use your health data.";
+				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "we will use your health data.";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UIMainStoryboardFile = Main;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -441,6 +476,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.galaxy.QuickHealthKit;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
+				"PROVISIONING_PROFILE_SPECIFIER[sdk=iphoneos*]" = quick_healthkit_dev;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";

@@ -154,16 +154,30 @@ extension HealthManager {
                 let heartbeatSeriesSamples = (samples ?? []).map { $0 as? HKHeartbeatSeriesSample }.compactMap { $0 }
                 
                 let group = DispatchGroup()
-                var otherDatas: [HealthOtherData?] = Array(repeating: nil, count: heartbeatSeriesSamples.count)
-                for (i, heartbeatSeriesSample) in heartbeatSeriesSamples.enumerated() {
+                
+                var infos: [String: HealthOtherData?] = [:]
+                
+                for sample in heartbeatSeriesSamples {
+                    infos[sample.uuid.uuidString] = nil
+                }
+                
+                for heartbeatSeriesSample in heartbeatSeriesSamples {
                     group.enter()
                     HealthManager.default._requestBeatToBeatMeasurements(heartbeatSeries: heartbeatSeriesSample) { timeSinceSeriesStarts in
                         let otherData: HealthOtherData? = HealthHelper.calculateOtherHealthData(timeSinceSeriesStarts: timeSinceSeriesStarts)
-                        otherDatas[i] = otherData
+                        infos[heartbeatSeriesSample.uuid.uuidString] = otherData
                         group.leave()
                     }
                 }
                 group.notify(queue: queue) {
+                    var otherDatas: [HealthOtherData?] = []
+                    
+                    for sample in heartbeatSeriesSamples {
+                        if let value = infos[sample.uuid.uuidString] {
+                            otherDatas.append(value)
+                        }
+                    }
+                    
                     completion?(otherDatas)
                 }
             }
@@ -197,16 +211,20 @@ extension HealthManager {
                     return
                 }
                 
+//                let results = (results ?? [])
+//                    .map { $0 as? HKQuantitySample }
+//                    .compactMap { $0 }
+//                    .filter({ sample -> Bool in
+//                        // 过滤掉用户输入的数据
+//                        if let value = sample.metadata?[HKMetadataKeyWasUserEntered] as? Bool {
+//                            return value == false
+//                        }
+//                        return true
+//                    })
+                
                 let results = (results ?? [])
                     .map { $0 as? HKQuantitySample }
                     .compactMap { $0 }
-                    .filter({ sample -> Bool in
-                        // 过滤掉用户输入的数据
-                        if let value = sample.metadata?[HKMetadataKeyWasUserEntered] as? Bool {
-                            return value == false
-                        }
-                        return true
-                    })
                 
                 HealthLog.Log("=================================")
                 HealthLog.Log("=================================")
@@ -653,82 +671,34 @@ extension HealthManager {
     public func requestHealthData(year: Int,
                                   month: Int,
                                   day: Int,
-                                  allowRequestHRV: Bool,
-                                  allowRequestHRVOtherData: Bool,
-                                  allowRequestHR: Bool,
-                                  allowRequestRHR: Bool,
-                                  allowRequestStep: Bool,
-                                  allowRequestBloodPressureSystolic: Bool = false,
-                                  allowRequestBloodPressureDiastolic: Bool = false,
-                                  allowRequestBodyMass: Bool = false,
-                                  allowRequestInsulin: Bool = false,
-                                  allowRequestBloodGlucose: Bool = false,
+                                  configuration: HealthRequestConfiguration,
                                   ascending: Bool,
                                   completion: ((_ healthData: HealthData) -> Void)?) {
+        
         let date = DateInRegion(year: year, month: month, day: day).date
-        HealthManager.default.requestHealthData(date: date,
-                                                allowRequestHRV: allowRequestHRV,
-                                                allowRequestHRVOtherData: allowRequestHRVOtherData,
-                                                allowRequestHR: allowRequestHR,
-                                                allowRequestRHR: allowRequestRHR,
-                                                allowRequestStep: allowRequestStep,
-                                                allowRequestBloodPressureSystolic: allowRequestBloodPressureSystolic,
-                                                allowRequestBloodPressureDiastolic: allowRequestBloodPressureDiastolic,
-                                                allowRequestBodyMass: allowRequestBodyMass,
-                                                allowRequestInsulin: allowRequestInsulin,
-                                                allowRequestBloodGlucose: allowRequestBloodGlucose,
-                                                ascending: ascending,
-                                                completion: completion)
-    }
-    
-    /// 请求某一天的健康数据
-    public func requestHealthData(date: Date,
-                                  allowRequestHRV: Bool,
-                                  allowRequestHRVOtherData: Bool,
-                                  allowRequestHR: Bool,
-                                  allowRequestRHR: Bool,
-                                  allowRequestStep: Bool,
-                                  allowRequestBloodPressureSystolic: Bool = false,
-                                  allowRequestBloodPressureDiastolic: Bool = false,
-                                  allowRequestBodyMass: Bool = false,
-                                  allowRequestInsulin: Bool = false,
-                                  allowRequestBloodGlucose: Bool = false,
-                                  ascending: Bool,
-                                  completion: ((_ healthData: HealthData) -> Void)?) {
+        
         let startDate = date.dateAt(.startOfDay).date // 00:00:00 - 零时
         let endDate = date.dateAt(.endOfDay).date // 23:59:59
-        HealthManager.default.requestHealthDatas(startDate: startDate,
-                                                 endDate: endDate,
-                                                 allowRequestHRV: allowRequestHRV,
-                                                 allowRequestHRVOtherData: allowRequestHRVOtherData,
-                                                 allowRequestHR: allowRequestHR,
-                                                 allowRequestRHR: allowRequestRHR,
-                                                 allowRequestStep: allowRequestStep,
-                                                 allowRequestBloodPressureSystolic: allowRequestBloodPressureSystolic,
-                                                 allowRequestBloodPressureDiastolic: allowRequestBloodPressureDiastolic,
-                                                 allowRequestBodyMass: allowRequestBodyMass,
-                                                 allowRequestInsulin: allowRequestInsulin,
-                                                 allowRequestBloodGlucose: allowRequestBloodGlucose,
-                                                 ascending: ascending) { healthDatas in
-            completion?(healthDatas.first!)
+        
+        HealthManager.default.requestHealthDatasGroupByDay(startDate: startDate,
+                                                           endDate: endDate,
+                                                           configuration: configuration,
+                                                           ascending: ascending) { healthDatas in
+            if let data = healthDatas.first {
+                completion?(data)
+            } else {
+                let data = HealthData(startDate: startDate, endDate: endDate)
+                completion?(data)
+            }
         }
     }
     
-    /// 请求健康数据
-    public func requestHealthDatas(startDate: Date,
-                                   endDate: Date,
-                                   allowRequestHRV: Bool = false,
-                                   allowRequestHRVOtherData: Bool = false,
-                                   allowRequestHR: Bool = false,
-                                   allowRequestRHR: Bool = false,
-                                   allowRequestStep: Bool = false,
-                                   allowRequestBloodPressureSystolic: Bool = false,
-                                   allowRequestBloodPressureDiastolic: Bool = false,
-                                   allowRequestBodyMass: Bool = false,
-                                   allowRequestInsulin: Bool = false,
-                                   allowRequestBloodGlucose: Bool = false,
-                                   ascending: Bool,
-                                   completion: ((_ healthDatas: [HealthData]) -> Void)?) {
+    /// 请求健康数据（根据天进行分组）
+    public func requestHealthDatasGroupByDay(startDate: Date,
+                                             endDate: Date,
+                                             configuration: HealthRequestConfiguration,
+                                             ascending: Bool,
+                                             completion: ((_ healthDatas: [HealthData]) -> Void)?) {
         queue.async {
             let startTime = CFAbsoluteTimeGetCurrent()
             
@@ -741,16 +711,7 @@ extension HealthManager {
             
             HealthManager.default.__requestHealthDatas(startDate: startDate,
                                                        endDate: endDate,
-                                                       allowRequestHRV: allowRequestHRV,
-                                                       allowRequestHRVOtherData: allowRequestHRVOtherData,
-                                                       allowRequestHR: allowRequestHR,
-                                                       allowRequestRHR: allowRequestRHR,
-                                                       allowRequestStep: allowRequestStep,
-                                                       allowRequestBloodPressureSystolic: allowRequestBloodPressureSystolic,
-                                                       allowRequestBloodPressureDiastolic: allowRequestBloodPressureDiastolic,
-                                                       allowRequestBodyMass: allowRequestBodyMass,
-                                                       allowRequestInsulin: allowRequestInsulin,
-                                                       allowRequestBloodGlucose: allowRequestBloodGlucose,
+                                                       configuration: configuration,
                                                        ascending: ascending) { healthDatas in
                 let endTime = CFAbsoluteTimeGetCurrent()
                 
@@ -766,16 +727,7 @@ extension HealthManager {
 extension HealthManager {
     private func __requestHealthDatas(startDate: Date,
                                       endDate: Date,
-                                      allowRequestHRV: Bool = false,
-                                      allowRequestHRVOtherData: Bool = false,
-                                      allowRequestHR: Bool = false,
-                                      allowRequestRHR: Bool = false,
-                                      allowRequestStep: Bool = false,
-                                      allowRequestBloodPressureSystolic: Bool = false,
-                                      allowRequestBloodPressureDiastolic: Bool = false,
-                                      allowRequestBodyMass: Bool = false,
-                                      allowRequestInsulin: Bool = false,
-                                      allowRequestBloodGlucose: Bool = false,
+                                      configuration: HealthRequestConfiguration,
                                       ascending: Bool,
                                       completion: ((_ healthDatas: [HealthData]) -> Void)?) {
         queue.async {
@@ -791,20 +743,23 @@ extension HealthManager {
             var otherDatas: [HealthOtherData?] = []
             
             var heartRateSamples: [HKQuantitySample] = []
+            
             var restingHeartRateSamples: [HKQuantitySample] = []
             
             var stepSamples: [HKQuantitySample] = []
             
             var bloodPressureSystolicSamples: [HKQuantitySample] = []
             var bloodPressureDiastolicSamples: [HKQuantitySample] = []
+            
             var bodyMassSamples: [HKQuantitySample] = []
             
             var insulinSamples: [HKQuantitySample] = []
+            
             var bloodGlucoseSamples: [HKQuantitySample] = []
             
             let group = DispatchGroup()
             
-            if allowRequestHRV {
+            if configuration.allowRequestHRV {
                 group.enter()
                 HealthManager.default.requestHeartRateVariability(startDate: startDate,
                                                                   endDate: endDate,
@@ -814,7 +769,7 @@ extension HealthManager {
                 }
             }
             
-            if allowRequestHRVOtherData {
+            if configuration.allowRequestHRVOtherData {
                 group.enter()
                 HealthManager.default.requestBeatToBeatMeasurements(startDate: startDate, endDate: endDate, ascending: ascending) { _otherDatas in
                     otherDatas = _otherDatas
@@ -822,7 +777,7 @@ extension HealthManager {
                 }
             }
             
-            if allowRequestRHR {
+            if configuration.allowRequestRHR {
                 group.enter()
                 HealthManager.default.requestRestingHeartRate(startDate: startDate, endDate: endDate, ascending: ascending) { results in
                     restingHeartRateSamples = results
@@ -831,7 +786,7 @@ extension HealthManager {
             }
             
             
-            if allowRequestHR {
+            if configuration.allowRequestHR {
                 group.enter()
                 HealthManager.default.requestHeartRate(startDate: startDate,
                                                        endDate: endDate,
@@ -842,7 +797,7 @@ extension HealthManager {
             }
             
             
-            if allowRequestStep {
+            if configuration.allowRequestStep {
                 group.enter()
                 HealthManager.default.requestSteps(startDate: startDate, endDate: endDate, ascending: ascending) { results in
                     stepSamples = results
@@ -850,7 +805,7 @@ extension HealthManager {
                 }
             }
             
-            if allowRequestBloodPressureSystolic {
+            if configuration.allowRequestBloodPressureSystolic {
                 group.enter()
                 HealthManager.default.requestBloodPressureSystolics(startDate: startDate, endDate: endDate, ascending: ascending) { results in
                     bloodPressureSystolicSamples = results
@@ -858,28 +813,28 @@ extension HealthManager {
                 }
             }
             
-            if allowRequestBloodPressureDiastolic {
+            if configuration.allowRequestBloodPressureDiastolic {
                 group.enter()
                 HealthManager.default.requestBloodPressureDiastolics(startDate: startDate, endDate: endDate, ascending: ascending) { results in
                     bloodPressureDiastolicSamples = results
                     group.leave()
                 }
             }
-            if allowRequestBodyMass {
+            if configuration.allowRequestBodyMass {
                 group.enter()
                 HealthManager.default.requestBodyMasses(startDate: startDate, endDate: endDate, ascending: ascending) { results in
                     bodyMassSamples = results
                     group.leave()
                 }
             }
-            if allowRequestInsulin {
+            if configuration.allowRequestInsulin {
                 group.enter()
                 HealthManager.default.requestInsulin(startDate: startDate, endDate: endDate, ascending: ascending) { results in
                     insulinSamples = results
                     group.leave()
                 }
             }
-            if allowRequestBloodGlucose {
+            if configuration.allowRequestBloodGlucose {
                 group.enter()
                 HealthManager.default.requestBloodGlucose(startDate: startDate, endDate: endDate, ascending: ascending) { results in
                     bloodGlucoseSamples = results
@@ -890,14 +845,19 @@ extension HealthManager {
             group.notify(queue: queue) {
                 
                 // 处理OtherData
-                // 有一个HRV Data必有一个Other Data
+                // 如果是用户输入的的HRV Data，那么HKMetadataKeyWasUserEntered为true，需要过滤掉，否则OtherData会匹配不上
+                // 有一个系统HRV Data必有一个Other Data
                 if !otherDatas.isEmpty {
-                    for (index, quantitySample) in heartRateVariabilitySamples.enumerated() {
+                    let samples = heartRateVariabilitySamples.filter { sample -> Bool in
+                        let wasUserEntered = (sample.metadata?[HKMetadataKeyWasUserEntered] as? Bool) ?? false
+                        return !wasUserEntered
+                    }
+                    for (index, sample) in samples.enumerated() {
                         var otherData: HealthOtherData?
                         if index >= 0 && index <= otherDatas.count - 1 {
                             otherData = otherDatas[index]
                         }
-                        quantitySample.otherData = otherData
+                        sample.otherData = otherData
                     }
                 }
                 
