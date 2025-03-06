@@ -145,4 +145,25 @@ public struct HealthSampleType {
         }
         return _type_
     }
+    
+    /// 正念
+    public static var mindfulSession: HKCategoryType {
+        return HKCategoryType(.mindfulSession)
+    }
+    
+    /// 睡眠
+    public static var sleepAnalysis: HKCategoryType {
+        return HKCategoryType(.sleepAnalysis)
+    }
+    
+    /// 能量（卡路里）
+    public static var activeEnergyBurned: HKQuantityType {
+        let _type_: HKQuantityType
+        if #available(iOS 15.0, watchOS 8.0, *) {
+            _type_ = HKQuantityType(.activeEnergyBurned)
+        } else {
+            _type_ = HKObjectType.quantityType(forIdentifier: .activeEnergyBurned)!
+        }
+        return _type_
+    }
 }

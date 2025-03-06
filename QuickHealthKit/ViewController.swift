@@ -8,6 +8,7 @@
 import UIKit
 import SnapKit
 import SwiftDate
+import HealthKit
 
 class ViewController: UIViewController {
 
@@ -42,7 +43,8 @@ class ViewController: UIViewController {
         
         let types = [
             HealthSampleType.heartRateVariabilitySDNN,
-            HealthSampleType.beatToBeatMeasurements
+            HealthSampleType.beatToBeatMeasurements,
+            HealthSampleType.sleepAnalysis
         ]
         
         HealthManager.default.requestHealthAuthorization(with: types, allowWrite: false) { success in
@@ -58,23 +60,51 @@ extension ViewController {
     @objc func testAction() {
         print("Start...")
         
-        let config = HealthRequestConfiguration.default
-        config.allowRequestHRV = true
-        config.allowRequestHRVOtherData = true
         
-        HealthManager.default.requestHealthData(year: 2025, month: 2, day: 27, configuration: config, ascending: true) { healthData in
+        
+        //let nowDate = Date.now
+        let nowDate = Date(year: 2024, month: 11, day: 22, hour: 8, minute: 0)
+        
+        let yesterdayDate = nowDate.dateAt(.yesterday)
+        
+        let startDate = Date(year: yesterdayDate.year, month: yesterdayDate.month, day: yesterdayDate.day, hour: 18, minute: 0)
+        
+        let endDate = Date(year: nowDate.year, month: nowDate.month, day: nowDate.day, hour: 18, minute: 0)
+        
+        HealthManager.default.requestSleepAnalysis(startDate: startDate, endDate: endDate, ascending: true) { results in
             
-            for data in healthData.sdnnDatas {
-                let date = data.displayDate
-                let sdnn = data.sdnn
-                let rmssd = data.otherData?.rmssd
+            for sample in results {
+                let sampleStartDate = sample.startDate
+                let sampleEndDate = sample.endDate
                 
-                let dateString = date.toString(.custom("yyyy-MM-dd HH:mm"))
+                let sampleStartDateString = sampleStartDate.toString(.custom("yyyy-MM-dd HH:mm"))
+                let sampleEndDateString = sampleEndDate.toString(.custom("yyyy-MM-dd HH:mm"))
                 
-                print("Date: \(dateString), SDNN: \(sdnn), RMSSD: \(rmssd?.description ?? "nil")")
+                
+                
+                print("😄😄😄: \(sampleStartDateString) - \(sampleEndDateString): \(sample.value)")
             }
-            
-            print("End")
         }
+        
     }
 }
+/*
+ let config = HealthRequestConfiguration.default
+ config.allowRequestHRV = true
+ config.allowRequestHRVOtherData = true
+ 
+ HealthManager.default.requestHealthData(year: 2025, month: 2, day: 27, configuration: config, ascending: true) { healthData in
+     
+     for data in healthData.sdnnDatas {
+         let date = data.displayDate
+         let sdnn = data.sdnn
+         let rmssd = data.otherData?.rmssd
+         
+         let dateString = date.toString(.custom("yyyy-MM-dd HH:mm"))
+         
+         print("Date: \(dateString), SDNN: \(sdnn), RMSSD: \(rmssd?.description ?? "nil")")
+     }
+     
+     print("End")
+ }
+ */

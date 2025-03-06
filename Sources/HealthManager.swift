@@ -664,6 +664,47 @@ extension HealthManager {
             HealthManager.default.healthStore.execute(query)
         }
     }
+    
+    /// 获取睡眠
+    public func requestSleepAnalysis(startDate: Date, endDate: Date, ascending: Bool, completion: ((_ results: [HKCategorySample]) -> Void)?) {
+        queue.async {
+            
+            let categoryType: HKCategoryType = HealthSampleType.sleepAnalysis
+            
+            let predicate = HKQuery.predicateForSamples(withStart: startDate, end: endDate)
+            
+            let timeSortDescriptor = NSSortDescriptor(key: HKSampleSortIdentifierEndDate, ascending: ascending)
+            let sortDescriptors = [timeSortDescriptor]
+            
+            let query = HKSampleQuery(sampleType: categoryType,
+                                      predicate: predicate,
+                                      limit: HKObjectQueryNoLimit,
+                                      sortDescriptors: sortDescriptors) { _, results, error in
+                if let error = error {
+                    
+                    HealthLog.Log("=================================")
+                    HealthLog.Log("=================================")
+                    HealthLog.Log("查询\(startDate.toString(.custom("yyyy/MM/dd HH:mm"))) - \(endDate.toString(.custom("yyyy/MM/dd HH:mm")))【Sleep Analysis】失败: \(error.localizedDescription)")
+                    HealthLog.Log("=================================")
+                    HealthLog.Log("=================================")
+                    
+                    completion?([])
+                    return
+                }
+                
+                let results = (results ?? []).map { $0 as? HKCategorySample }.compactMap { $0 }
+                
+                HealthLog.Log("=================================")
+                HealthLog.Log("=================================")
+                HealthLog.Log("查询\(startDate.toString(.custom("yyyy/MM/dd HH:mm"))) - \(endDate.toString(.custom("yyyy/MM/dd HH:mm")))【Sleep Analysis】成功，数量: \(results.count)")
+                HealthLog.Log("=================================")
+                HealthLog.Log("=================================")
+                
+                completion?(results)
+            }
+            HealthManager.default.healthStore.execute(query)
+        }
+    }
 }
 
 extension HealthManager {
