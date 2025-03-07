@@ -166,4 +166,15 @@ public struct HealthSampleType {
         }
         return _type_
     }
+    
+    /// 声音（DB）
+    public static var environmentalAudioExposure: HKQuantityType {
+        let _type_: HKQuantityType
+        if #available(iOS 15.0, watchOS 8.0, *) {
+            _type_ = HKQuantityType(.environmentalAudioExposure)
+        } else {
+            _type_ = HKObjectType.quantityType(forIdentifier: .environmentalAudioExposure)!
+        }
+        return _type_
+    }
 }

@@ -44,7 +44,8 @@ class ViewController: UIViewController {
         let types = [
             HealthSampleType.heartRateVariabilitySDNN,
             HealthSampleType.beatToBeatMeasurements,
-            HealthSampleType.sleepAnalysis
+            HealthSampleType.sleepAnalysis,
+            HealthSampleType.environmentalAudioExposure
         ]
         
         HealthManager.default.requestHealthAuthorization(with: types, allowWrite: false) { success in
@@ -61,17 +62,13 @@ extension ViewController {
         print("Start...")
         
         
+        let nowDate = Date.now
         
-        //let nowDate = Date.now
-        let nowDate = Date(year: 2024, month: 11, day: 22, hour: 8, minute: 0)
+        let startDate = nowDate.dateAt(.startOfDay).date
         
-        let yesterdayDate = nowDate.dateAt(.yesterday)
+        let endDate = nowDate.dateAt(.endOfDay).date
         
-        let startDate = Date(year: yesterdayDate.year, month: yesterdayDate.month, day: yesterdayDate.day, hour: 18, minute: 0)
-        
-        let endDate = Date(year: nowDate.year, month: nowDate.month, day: nowDate.day, hour: 18, minute: 0)
-        
-        HealthManager.default.requestSleepAnalysis(startDate: startDate, endDate: endDate, ascending: true) { results in
+        HealthManager.default.requestEnvironmentalAudioExposure(startDate: startDate, endDate: endDate, ascending: true) { results in
             
             for sample in results {
                 let sampleStartDate = sample.startDate
@@ -82,7 +79,7 @@ extension ViewController {
                 
                 
                 
-                print("😄😄😄: \(sampleStartDateString) - \(sampleEndDateString): \(sample.value)")
+                print("😄😄😄: \(sampleStartDateString) - \(sampleEndDateString): \(sample.soundDB)")
             }
         }
         
@@ -106,5 +103,30 @@ extension ViewController {
      }
      
      print("End")
+ }
+ 
+ 
+ 
+ let nowDate = Date(year: 2024, month: 11, day: 22, hour: 8, minute: 0)
+ 
+ let yesterdayDate = nowDate.dateAt(.yesterday)
+ 
+ let startDate = Date(year: yesterdayDate.year, month: yesterdayDate.month, day: yesterdayDate.day, hour: 18, minute: 0)
+ 
+ let endDate = Date(year: nowDate.year, month: nowDate.month, day: nowDate.day, hour: 18, minute: 0)
+ 
+ HealthManager.default.requestSleepAnalysis(startDate: startDate, endDate: endDate, ascending: true) { results in
+     
+     for sample in results {
+         let sampleStartDate = sample.startDate
+         let sampleEndDate = sample.endDate
+         
+         let sampleStartDateString = sampleStartDate.toString(.custom("yyyy-MM-dd HH:mm"))
+         let sampleEndDateString = sampleEndDate.toString(.custom("yyyy-MM-dd HH:mm"))
+         
+         
+         
+         print("😄😄😄: \(sampleStartDateString) - \(sampleEndDateString): \(sample.value)")
+     }
  }
  */

@@ -16,6 +16,7 @@ private let heartUnit = HKUnit.count().unitDivided(by: HKUnit.minute())
 private let stepCountUnit = HKUnit.count()
 private let internationalUnit = HKUnit.internationalUnit()
 private let mmol_l_unit = HKUnit.moleUnit(with: HKMetricPrefix.milli, molarMass: HKUnitMolarMassBloodGlucose).unitDivided(by: HKUnit.liter())
+private let soundLevelUnit = HKUnit.decibelAWeightedSoundPressureLevel()
 
 private let decimalNumberHandler_1 = NSDecimalNumberHandler(roundingMode: .plain,
                                                             scale: 1,
@@ -74,6 +75,12 @@ extension HKQuantitySample {
     public var bloodGlucoseMmol: NSDecimalNumber {
         let value = quantity.doubleValue(for: mmol_l_unit)
         return NSDecimalNumber(value: value).rounding(accordingToBehavior: decimalNumberHandler_1)
+    }
+    
+    /// 获取声音（DB）
+    public var soundDB: Int {
+        let value = quantity.doubleValue(for: soundLevelUnit)
+        return Int(round(value))
     }
 }
 
