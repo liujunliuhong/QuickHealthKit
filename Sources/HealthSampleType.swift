@@ -177,4 +177,15 @@ public struct HealthSampleType {
         }
         return _type_
     }
+    
+    /// 呼吸频率（DB）
+    public static var respiratoryRate: HKQuantityType {
+        let _type_: HKQuantityType
+        if #available(iOS 15.0, watchOS 8.0, *) {
+            _type_ = HKQuantityType(.respiratoryRate)
+        } else {
+            _type_ = HKObjectType.quantityType(forIdentifier: .respiratoryRate)!
+        }
+        return _type_
+    }
 }

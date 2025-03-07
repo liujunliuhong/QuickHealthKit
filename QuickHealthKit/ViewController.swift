@@ -11,7 +11,7 @@ import SwiftDate
 import HealthKit
 
 class ViewController: UIViewController {
-
+    
     lazy var testButton: UIButton = {
         let button = UIButton(type: .custom)
         button.setTitle("Test", for: .normal)
@@ -45,15 +45,16 @@ class ViewController: UIViewController {
             HealthSampleType.heartRateVariabilitySDNN,
             HealthSampleType.beatToBeatMeasurements,
             HealthSampleType.sleepAnalysis,
-            HealthSampleType.environmentalAudioExposure
+            HealthSampleType.environmentalAudioExposure,
+            HealthSampleType.respiratoryRate,
         ]
         
         HealthManager.default.requestHealthAuthorization(with: types, allowWrite: false) { success in
             
         }
     }
-
-
+    
+    
 }
 
 
@@ -68,7 +69,7 @@ extension ViewController {
         
         let endDate = nowDate.dateAt(.endOfDay).date
         
-        HealthManager.default.requestEnvironmentalAudioExposure(startDate: startDate, endDate: endDate, ascending: true) { results in
+        HealthManager.default.requestRespiratoryRate(startDate: startDate, endDate: endDate, ascending: true) { results in
             
             for sample in results {
                 let sampleStartDate = sample.startDate
@@ -77,9 +78,7 @@ extension ViewController {
                 let sampleStartDateString = sampleStartDate.toString(.custom("yyyy-MM-dd HH:mm"))
                 let sampleEndDateString = sampleEndDate.toString(.custom("yyyy-MM-dd HH:mm"))
                 
-                
-                
-                print("😄😄😄: \(sampleStartDateString) - \(sampleEndDateString): \(sample.soundDB)")
+                print("😄😄😄: \(sampleStartDateString) - \(sampleEndDateString): \(sample.respiratoryRate.stringValue)")
             }
         }
         
@@ -91,18 +90,18 @@ extension ViewController {
  config.allowRequestHRVOtherData = true
  
  HealthManager.default.requestHealthData(year: 2025, month: 2, day: 27, configuration: config, ascending: true) { healthData in
-     
-     for data in healthData.sdnnDatas {
-         let date = data.displayDate
-         let sdnn = data.sdnn
-         let rmssd = data.otherData?.rmssd
-         
-         let dateString = date.toString(.custom("yyyy-MM-dd HH:mm"))
-         
-         print("Date: \(dateString), SDNN: \(sdnn), RMSSD: \(rmssd?.description ?? "nil")")
-     }
-     
-     print("End")
+ 
+ for data in healthData.sdnnDatas {
+ let date = data.displayDate
+ let sdnn = data.sdnn
+ let rmssd = data.otherData?.rmssd
+ 
+ let dateString = date.toString(.custom("yyyy-MM-dd HH:mm"))
+ 
+ print("Date: \(dateString), SDNN: \(sdnn), RMSSD: \(rmssd?.description ?? "nil")")
+ }
+ 
+ print("End")
  }
  
  
@@ -116,17 +115,17 @@ extension ViewController {
  let endDate = Date(year: nowDate.year, month: nowDate.month, day: nowDate.day, hour: 18, minute: 0)
  
  HealthManager.default.requestSleepAnalysis(startDate: startDate, endDate: endDate, ascending: true) { results in
-     
-     for sample in results {
-         let sampleStartDate = sample.startDate
-         let sampleEndDate = sample.endDate
-         
-         let sampleStartDateString = sampleStartDate.toString(.custom("yyyy-MM-dd HH:mm"))
-         let sampleEndDateString = sampleEndDate.toString(.custom("yyyy-MM-dd HH:mm"))
-         
-         
-         
-         print("😄😄😄: \(sampleStartDateString) - \(sampleEndDateString): \(sample.value)")
-     }
+ 
+ for sample in results {
+ let sampleStartDate = sample.startDate
+ let sampleEndDate = sample.endDate
+ 
+ let sampleStartDateString = sampleStartDate.toString(.custom("yyyy-MM-dd HH:mm"))
+ let sampleEndDateString = sampleEndDate.toString(.custom("yyyy-MM-dd HH:mm"))
+ 
+ 
+ 
+ print("😄😄😄: \(sampleStartDateString) - \(sampleEndDateString): \(sample.value)")
+ }
  }
  */

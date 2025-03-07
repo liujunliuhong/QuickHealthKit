@@ -17,6 +17,7 @@ private let stepCountUnit = HKUnit.count()
 private let internationalUnit = HKUnit.internationalUnit()
 private let mmol_l_unit = HKUnit.moleUnit(with: HKMetricPrefix.milli, molarMass: HKUnitMolarMassBloodGlucose).unitDivided(by: HKUnit.liter())
 private let soundLevelUnit = HKUnit.decibelAWeightedSoundPressureLevel()
+private let respiratoryRateUnit = HKUnit.count().unitDivided(by: HKUnit.minute())
 
 private let decimalNumberHandler_1 = NSDecimalNumberHandler(roundingMode: .plain,
                                                             scale: 1,
@@ -81,6 +82,12 @@ extension HKQuantitySample {
     public var soundDB: Int {
         let value = quantity.doubleValue(for: soundLevelUnit)
         return Int(round(value))
+    }
+    
+    /// 获取呼吸速率（times/min）
+    public var respiratoryRate: NSDecimalNumber {
+        let value = quantity.doubleValue(for: respiratoryRateUnit)
+        return NSDecimalNumber(value: value).rounding(accordingToBehavior: decimalNumberHandler_1)
     }
 }
 
@@ -246,6 +253,33 @@ extension Array where Element == HKQuantitySample {
         }
         let values = map { $0.soundDB }
         return (values.min()!, values.max()!)
+    }
+    
+    /// 获取平均呼吸速率
+    public var avgRespiratoryRate: NSDecimalNumber? {
+        if isEmpty {
+            return nil
+        }
+        let total = reduce(NSDecimalNumber.zero, { $0.adding($1.respiratoryRate, withBehavior: decimalNumberHandler_1) })
+        let result = total.dividing(by: NSDecimalNumber(value: count), withBehavior: decimalNumberHandler_1)
+        return result
+    }
+    
+    /// 呼吸速率范围
+    public var respiratoryRateRange: (min: NSDecimalNumber, max: NSDecimalNumber)? {
+        if isEmpty {
+            return nil
+        }
+        let values = map { $0.respiratoryRate }
+        
+        let newValues = values.sorted { d1, d2 -> Bool in
+            let r = d1.compare(d2)
+            if r == .orderedAscending || r == .orderedSame {
+                return true
+            }
+            return false
+        }
+        return (newValues.first!, newValues.last!)
     }
     
     /// 对`HKQuantitySample`集合排序（升序、降序）
