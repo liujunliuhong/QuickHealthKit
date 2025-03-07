@@ -229,6 +229,25 @@ extension Array where Element == HKQuantitySample {
         return (values.min()!, values.max()!)
     }
     
+    /// 获取平均声音
+    public var avgSoundDB: Int? {
+        if isEmpty {
+            return nil
+        }
+        let total = reduce(0, { $0 + $1.soundDB })
+        let result = Double(total) / Double(count)
+        return Int(round(result))
+    }
+    
+    /// 声音范围
+    public var soundDBRange: (min: Int, max: Int)? {
+        if isEmpty {
+            return nil
+        }
+        let values = map { $0.soundDB }
+        return (values.min()!, values.max()!)
+    }
+    
     /// 对`HKQuantitySample`集合排序（升序、降序）
     public func sort(ascending: Bool) -> [Element] {
         if ascending {
