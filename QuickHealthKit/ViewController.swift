@@ -47,6 +47,9 @@ class ViewController: UIViewController {
             HealthSampleType.sleepAnalysis,
             HealthSampleType.environmentalAudioExposure,
             HealthSampleType.respiratoryRate,
+            HealthSampleType.distanceWalkingRunning,
+            HealthSampleType.flightsClimbed,
+            HealthSampleType.activeEnergyBurned,
         ]
         
         HealthManager.default.requestHealthAuthorization(with: types, allowWrite: false) { success in
@@ -63,14 +66,16 @@ extension ViewController {
         print("Start...")
         
         
-        let nowDate = Date.now
+        let nowDate = Date(year: 2025, month: 3, day: 8, hour: 6, minute: 0)
+        // let nowDate = Date.now
         
         let startDate = nowDate.dateAt(.startOfDay).date
         
         let endDate = nowDate.dateAt(.endOfDay).date
         
-        HealthManager.default.requestRespiratoryRate(startDate: startDate, endDate: endDate, ascending: true) { results in
+        HealthManager.default.requestActiveEnergyBurned(startDate: startDate, endDate: endDate, ascending: true) { results in
             
+            var sum: NSDecimalNumber = .zero
             for sample in results {
                 let sampleStartDate = sample.startDate
                 let sampleEndDate = sample.endDate
@@ -78,8 +83,12 @@ extension ViewController {
                 let sampleStartDateString = sampleStartDate.toString(.custom("yyyy-MM-dd HH:mm"))
                 let sampleEndDateString = sampleEndDate.toString(.custom("yyyy-MM-dd HH:mm"))
                 
-                print("😄😄😄: \(sampleStartDateString) - \(sampleEndDateString): \(sample.respiratoryRate.stringValue)")
+                print("😄😄😄: \(sampleStartDateString) - \(sampleEndDateString): \(sample.kcal.stringValue)")
+                
+                sum = sum.adding(sample.kcal)
             }
+            
+            print("------\(sum.stringValue)")
         }
         
     }

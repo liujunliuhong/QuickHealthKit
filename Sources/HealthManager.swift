@@ -787,6 +787,129 @@ extension HealthManager {
             HealthManager.default.healthStore.execute(query)
         }
     }
+    
+    /// distanceWalkingRunning
+    public func requestDistanceWalkingRunning(startDate: Date, endDate: Date, ascending: Bool, completion: ((_ results: [HKQuantitySample]) -> Void)?) {
+        queue.async {
+            
+            let quantityType: HKQuantityType = HealthSampleType.distanceWalkingRunning
+            
+            let predicate = HKQuery.predicateForSamples(withStart: startDate, end: endDate)
+            
+            let timeSortDescriptor = NSSortDescriptor(key: HKSampleSortIdentifierEndDate, ascending: ascending)
+            let sortDescriptors = [timeSortDescriptor]
+            
+            let query = HKSampleQuery(sampleType: quantityType,
+                                      predicate: predicate,
+                                      limit: HKObjectQueryNoLimit,
+                                      sortDescriptors: sortDescriptors) { _, results, error in
+                if let error = error {
+                    
+                    HealthLog.Log("=================================")
+                    HealthLog.Log("=================================")
+                    HealthLog.Log("查询\(startDate.toString(.custom("yyyy/MM/dd HH:mm"))) - \(endDate.toString(.custom("yyyy/MM/dd HH:mm")))【Distance Walking Running】失败: \(error.localizedDescription)")
+                    HealthLog.Log("=================================")
+                    HealthLog.Log("=================================")
+                    
+                    completion?([])
+                    return
+                }
+                
+                let results = (results ?? []).map { $0 as? HKQuantitySample }.compactMap { $0 }
+                
+                HealthLog.Log("=================================")
+                HealthLog.Log("=================================")
+                HealthLog.Log("查询\(startDate.toString(.custom("yyyy/MM/dd HH:mm"))) - \(endDate.toString(.custom("yyyy/MM/dd HH:mm")))【Distance Walking Running】成功，数量: \(results.count)")
+                HealthLog.Log("=================================")
+                HealthLog.Log("=================================")
+                
+                completion?(results)
+            }
+            HealthManager.default.healthStore.execute(query)
+        }
+    }
+    
+    /// 楼梯数量
+    public func requestFlightsClimbed(startDate: Date, endDate: Date, ascending: Bool, completion: ((_ results: [HKQuantitySample]) -> Void)?) {
+        queue.async {
+            
+            let quantityType: HKQuantityType = HealthSampleType.flightsClimbed
+            
+            let predicate = HKQuery.predicateForSamples(withStart: startDate, end: endDate)
+            
+            let timeSortDescriptor = NSSortDescriptor(key: HKSampleSortIdentifierEndDate, ascending: ascending)
+            let sortDescriptors = [timeSortDescriptor]
+            
+            let query = HKSampleQuery(sampleType: quantityType,
+                                      predicate: predicate,
+                                      limit: HKObjectQueryNoLimit,
+                                      sortDescriptors: sortDescriptors) { _, results, error in
+                if let error = error {
+                    
+                    HealthLog.Log("=================================")
+                    HealthLog.Log("=================================")
+                    HealthLog.Log("查询\(startDate.toString(.custom("yyyy/MM/dd HH:mm"))) - \(endDate.toString(.custom("yyyy/MM/dd HH:mm")))【Flights Climbed】失败: \(error.localizedDescription)")
+                    HealthLog.Log("=================================")
+                    HealthLog.Log("=================================")
+                    
+                    completion?([])
+                    return
+                }
+                
+                let results = (results ?? []).map { $0 as? HKQuantitySample }.compactMap { $0 }
+                
+                HealthLog.Log("=================================")
+                HealthLog.Log("=================================")
+                HealthLog.Log("查询\(startDate.toString(.custom("yyyy/MM/dd HH:mm"))) - \(endDate.toString(.custom("yyyy/MM/dd HH:mm")))【Flights Climbed】成功，数量: \(results.count)")
+                HealthLog.Log("=================================")
+                HealthLog.Log("=================================")
+                
+                completion?(results)
+            }
+            HealthManager.default.healthStore.execute(query)
+        }
+    }
+    
+    /// 卡路里
+    public func requestActiveEnergyBurned(startDate: Date, endDate: Date, ascending: Bool, completion: ((_ results: [HKQuantitySample]) -> Void)?) {
+        queue.async {
+            
+            let quantityType: HKQuantityType = HealthSampleType.activeEnergyBurned
+            
+            let predicate = HKQuery.predicateForSamples(withStart: startDate, end: endDate)
+            
+            let timeSortDescriptor = NSSortDescriptor(key: HKSampleSortIdentifierEndDate, ascending: ascending)
+            let sortDescriptors = [timeSortDescriptor]
+            
+            let query = HKSampleQuery(sampleType: quantityType,
+                                      predicate: predicate,
+                                      limit: HKObjectQueryNoLimit,
+                                      sortDescriptors: sortDescriptors) { _, results, error in
+                if let error = error {
+                    
+                    HealthLog.Log("=================================")
+                    HealthLog.Log("=================================")
+                    HealthLog.Log("查询\(startDate.toString(.custom("yyyy/MM/dd HH:mm"))) - \(endDate.toString(.custom("yyyy/MM/dd HH:mm")))【Active Energy Burned】失败: \(error.localizedDescription)")
+                    HealthLog.Log("=================================")
+                    HealthLog.Log("=================================")
+                    
+                    completion?([])
+                    return
+                }
+                
+                let results = (results ?? []).map { $0 as? HKQuantitySample }.compactMap { $0 }
+                
+                HealthLog.Log("=================================")
+                HealthLog.Log("=================================")
+                HealthLog.Log("查询\(startDate.toString(.custom("yyyy/MM/dd HH:mm"))) - \(endDate.toString(.custom("yyyy/MM/dd HH:mm")))【Active Energy Burned】成功，数量: \(results.count)")
+                HealthLog.Log("=================================")
+                HealthLog.Log("=================================")
+                
+                completion?(results)
+            }
+            HealthManager.default.healthStore.execute(query)
+        }
+    }
 }
 
 extension HealthManager {

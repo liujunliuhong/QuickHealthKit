@@ -188,4 +188,26 @@ public struct HealthSampleType {
         }
         return _type_
     }
+    
+    /// distanceWalkingRunning
+    public static var distanceWalkingRunning: HKQuantityType {
+        let _type_: HKQuantityType
+        if #available(iOS 15.0, watchOS 8.0, *) {
+            _type_ = HKQuantityType(.distanceWalkingRunning)
+        } else {
+            _type_ = HKObjectType.quantityType(forIdentifier: .distanceWalkingRunning)!
+        }
+        return _type_
+    }
+    
+    /// 楼梯数量
+    public static var flightsClimbed: HKQuantityType {
+        let _type_: HKQuantityType
+        if #available(iOS 15.0, watchOS 8.0, *) {
+            _type_ = HKQuantityType(.flightsClimbed)
+        } else {
+            _type_ = HKObjectType.quantityType(forIdentifier: .flightsClimbed)!
+        }
+        return _type_
+    }
 }

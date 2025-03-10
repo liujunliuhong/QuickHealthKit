@@ -11,16 +11,25 @@ import HealthKit
 private let mmHgUnit = HKUnit.millimeterOfMercury()
 private let kgUnit = HKUnit.gramUnit(with: .kilo)
 private let cmUnit = HKUnit.meterUnit(with: .centi)
+private let mUnit = HKUnit.meter()
 private let sdnnUnit = HKUnit.secondUnit(with: .milli)
 private let heartUnit = HKUnit.count().unitDivided(by: HKUnit.minute())
-private let stepCountUnit = HKUnit.count()
+private let countUnit = HKUnit.count()
 private let internationalUnit = HKUnit.internationalUnit()
 private let mmol_l_unit = HKUnit.moleUnit(with: HKMetricPrefix.milli, molarMass: HKUnitMolarMassBloodGlucose).unitDivided(by: HKUnit.liter())
 private let soundLevelUnit = HKUnit.decibelAWeightedSoundPressureLevel()
 private let respiratoryRateUnit = HKUnit.count().unitDivided(by: HKUnit.minute())
+private let kcalUnit = HKUnit.kilocalorie()
 
 private let decimalNumberHandler_1 = NSDecimalNumberHandler(roundingMode: .plain,
                                                             scale: 1,
+                                                            raiseOnExactness: false,
+                                                            raiseOnOverflow: false,
+                                                            raiseOnUnderflow: false,
+                                                            raiseOnDivideByZero: false)
+
+private let decimalNumberHandler_2 = NSDecimalNumberHandler(roundingMode: .plain,
+                                                            scale: 2,
                                                             raiseOnExactness: false,
                                                             raiseOnOverflow: false,
                                                             raiseOnUnderflow: false,
@@ -62,7 +71,7 @@ extension HKQuantitySample {
     
     /// 获取步数
     public var stepCount: Int {
-        let value = quantity.doubleValue(for: stepCountUnit)
+        let value = quantity.doubleValue(for: countUnit)
         return Int(round(value))
     }
     
@@ -84,10 +93,26 @@ extension HKQuantitySample {
         return Int(round(value))
     }
     
-    /// 获取呼吸速率（times/min）
+    /// 获取呼吸速率
     public var respiratoryRate: NSDecimalNumber {
         let value = quantity.doubleValue(for: respiratoryRateUnit)
         return NSDecimalNumber(value: value).rounding(accordingToBehavior: decimalNumberHandler_1)
+    }
+    
+    /// 距离（cm）
+    public var cmDistance: Int {
+        return Int(quantity.doubleValue(for: cmUnit))
+    }
+    
+    /// 楼梯数量
+    public var floorCount: Int {
+        return Int(quantity.doubleValue(for: countUnit))
+    }
+    
+    /// 获取卡路里（kcal）
+    public var kcal: NSDecimalNumber {
+        let value = quantity.doubleValue(for: kcalUnit)
+        return NSDecimalNumber(value: value).rounding(accordingToBehavior: decimalNumberHandler_2)
     }
 }
 
@@ -271,6 +296,43 @@ extension Array where Element == HKQuantitySample {
             return nil
         }
         let values = map { $0.respiratoryRate }
+        
+        let newValues = values.sorted { d1, d2 -> Bool in
+            let r = d1.compare(d2)
+            if r == .orderedAscending || r == .orderedSame {
+                return true
+            }
+            return false
+        }
+        return (newValues.first!, newValues.last!)
+    }
+    
+    /// cm距离范围
+    public var cmDistanceRange: (min: Int, max: Int)? {
+        if isEmpty {
+            return nil
+        }
+        let values = map { $0.cmDistance }
+        
+        return (values.min()!, values.max()!)
+    }
+    
+    /// 楼梯数量范围
+    public var floorCountRange: (min: Int, max: Int)? {
+        if isEmpty {
+            return nil
+        }
+        let values = map { $0.floorCount }
+        
+        return (values.min()!, values.max()!)
+    }
+    
+    /// 卡路里范围
+    public var kcalRange: (min: NSDecimalNumber, max: NSDecimalNumber)? {
+        if isEmpty {
+            return nil
+        }
+        let values = map { $0.kcal }
         
         let newValues = values.sorted { d1, d2 -> Bool in
             let r = d1.compare(d2)
