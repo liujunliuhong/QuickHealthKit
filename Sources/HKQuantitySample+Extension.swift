@@ -12,6 +12,7 @@ private let mmHgUnit = HKUnit.millimeterOfMercury() // mmHg
 private let kgUnit = HKUnit.gramUnit(with: .kilo) // kg
 private let cmUnit = HKUnit.meterUnit(with: .centi) // cm
 private let mUnit = HKUnit.meter() // m
+private let mileUnit = HKUnit.mile() // mile - 英里
 private let sdnnUnit = HKUnit.secondUnit(with: .milli) // ms
 private let heartUnit = HKUnit.count().unitDivided(by: HKUnit.minute()) // times/min
 private let countUnit = HKUnit.count() // times
@@ -101,8 +102,15 @@ extension HKQuantitySample {
     }
     
     /// 距离（cm）
-    public var cmDistance: Int {
-        return Int(quantity.doubleValue(for: cmUnit))
+    public var cmDistance: NSDecimalNumber {
+        let value = quantity.doubleValue(for: cmUnit)
+        return NSDecimalNumber(value: value).rounding(accordingToBehavior: decimalNumberHandler_1)
+    }
+    
+    /// 距离（mile）
+    public var mileDistance: NSDecimalNumber {
+        let value = quantity.doubleValue(for: mileUnit)
+        return NSDecimalNumber(value: value).rounding(accordingToBehavior: decimalNumberHandler_1)
     }
     
     /// 楼梯数量
@@ -251,6 +259,16 @@ extension Array where Element == HKQuantitySample {
         return (values.min()!, values.max()!)
     }
     
+    /// 获取平均Step Count
+    public var avgStepCount: Int? {
+        if isEmpty {
+            return nil
+        }
+        let total = reduce(0, { $0 + $1.stepCount })
+        let result = Double(total) / Double(count)
+        return Int(round(result))
+    }
+    
     /// 获取Step
     public var stepCount: Int {
         if isEmpty {
@@ -314,14 +332,58 @@ extension Array where Element == HKQuantitySample {
         return (newValues.first!, newValues.last!)
     }
     
+    /// 获取平均cm距离
+    public var avgCmDistance: NSDecimalNumber? {
+        if isEmpty {
+            return nil
+        }
+        let total = reduce(NSDecimalNumber.zero, { $0.adding($1.cmDistance, withBehavior: decimalNumberHandler_1) })
+        let result = total.dividing(by: NSDecimalNumber(value: count), withBehavior: decimalNumberHandler_1)
+        return result
+    }
+    
     /// cm距离范围
-    public var cmDistanceRange: (min: Int, max: Int)? {
+    public var cmDistanceRange: (min: NSDecimalNumber, max: NSDecimalNumber)? {
         if isEmpty {
             return nil
         }
         let values = map { $0.cmDistance }
         
-        return (values.min()!, values.max()!)
+        let newValues = values.sorted { d1, d2 -> Bool in
+            let r = d1.compare(d2)
+            if r == .orderedAscending || r == .orderedSame {
+                return true
+            }
+            return false
+        }
+        return (newValues.first!, newValues.last!)
+    }
+    
+    /// 获取平均mile距离
+    public var avgMileDistance: NSDecimalNumber? {
+        if isEmpty {
+            return nil
+        }
+        let total = reduce(NSDecimalNumber.zero, { $0.adding($1.mileDistance, withBehavior: decimalNumberHandler_1) })
+        let result = total.dividing(by: NSDecimalNumber(value: count), withBehavior: decimalNumberHandler_1)
+        return result
+    }
+    
+    /// mile距离范围
+    public var mileDistanceRange: (min: NSDecimalNumber, max: NSDecimalNumber)? {
+        if isEmpty {
+            return nil
+        }
+        let values = map { $0.mileDistance }
+        
+        let newValues = values.sorted { d1, d2 -> Bool in
+            let r = d1.compare(d2)
+            if r == .orderedAscending || r == .orderedSame {
+                return true
+            }
+            return false
+        }
+        return (newValues.first!, newValues.last!)
     }
     
     /// 楼梯数量范围
@@ -332,6 +394,16 @@ extension Array where Element == HKQuantitySample {
         let values = map { $0.floorCount }
         
         return (values.min()!, values.max()!)
+    }
+    
+    /// 获取平均kcal
+    public var avgKcal: NSDecimalNumber? {
+        if isEmpty {
+            return nil
+        }
+        let total = reduce(NSDecimalNumber.zero, { $0.adding($1.kcal, withBehavior: decimalNumberHandler_1) })
+        let result = total.dividing(by: NSDecimalNumber(value: count), withBehavior: decimalNumberHandler_1)
+        return result
     }
     
     /// 卡路里范围（kcal）
@@ -349,6 +421,16 @@ extension Array where Element == HKQuantitySample {
             return false
         }
         return (newValues.first!, newValues.last!)
+    }
+    
+    /// 获取平均kj
+    public var avgKJ: NSDecimalNumber? {
+        if isEmpty {
+            return nil
+        }
+        let total = reduce(NSDecimalNumber.zero, { $0.adding($1.kj, withBehavior: decimalNumberHandler_1) })
+        let result = total.dividing(by: NSDecimalNumber(value: count), withBehavior: decimalNumberHandler_1)
+        return result
     }
     
     /// 卡路里范围（kj）
