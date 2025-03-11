@@ -83,9 +83,9 @@ extension ViewController {
                 let sampleStartDateString = sampleStartDate.toString(.custom("yyyy-MM-dd HH:mm"))
                 let sampleEndDateString = sampleEndDate.toString(.custom("yyyy-MM-dd HH:mm"))
                 
-                print("😄😄😄: \(sampleStartDateString) - \(sampleEndDateString): \(sample.kcal.stringValue)")
+                print("😄😄😄: \(sampleStartDateString) - \(sampleEndDateString): \(sample.kj.stringValue)")
                 
-                sum = sum.adding(sample.kcal)
+                sum = sum.adding(sample.kj)
             }
             
             print("------\(sum.stringValue)")
