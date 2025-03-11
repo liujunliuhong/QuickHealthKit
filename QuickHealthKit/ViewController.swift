@@ -50,6 +50,7 @@ class ViewController: UIViewController {
             HealthSampleType.distanceWalkingRunning,
             HealthSampleType.flightsClimbed,
             HealthSampleType.activeEnergyBurned,
+            HealthSampleType.mindfulSession,
         ]
         
         HealthManager.default.requestHealthAuthorization(with: types, allowWrite: false) { success in
@@ -66,16 +67,16 @@ extension ViewController {
         print("Start...")
         
         
-        let nowDate = Date(year: 2025, month: 3, day: 8, hour: 6, minute: 0)
+        let nowDate = Date(year: 2025, month: 3, day: 7, hour: 6, minute: 0)
         // let nowDate = Date.now
         
         let startDate = nowDate.dateAt(.startOfDay).date
         
         let endDate = nowDate.dateAt(.endOfDay).date
         
-        HealthManager.default.requestActiveEnergyBurned(startDate: startDate, endDate: endDate, ascending: true) { results in
+        HealthManager.default.requestMindfulSession(startDate: startDate, endDate: endDate, ascending: true) { results in
             
-            var sum: NSDecimalNumber = .zero
+            //            var sum: NSDecimalNumber = .zero
             for sample in results {
                 let sampleStartDate = sample.startDate
                 let sampleEndDate = sample.endDate
@@ -83,12 +84,13 @@ extension ViewController {
                 let sampleStartDateString = sampleStartDate.toString(.custom("yyyy-MM-dd HH:mm"))
                 let sampleEndDateString = sampleEndDate.toString(.custom("yyyy-MM-dd HH:mm"))
                 
-                print("😄😄😄: \(sampleStartDateString) - \(sampleEndDateString): \(sample.kj.stringValue)")
+                //print("😄😄😄: \(sampleStartDateString) - \(sampleEndDateString): \(sample.value)")
+                print(sample)
                 
-                sum = sum.adding(sample.kj)
+                //                sum = sum.adding(sample.kj)
             }
             
-            print("------\(sum.stringValue)")
+            //            print("------\(sum.stringValue)")
         }
         
     }

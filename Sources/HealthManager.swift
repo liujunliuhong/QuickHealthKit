@@ -870,7 +870,7 @@ extension HealthManager {
         }
     }
     
-    /// 卡路里
+    /// 能量消耗
     public func requestActiveEnergyBurned(startDate: Date, endDate: Date, ascending: Bool, completion: ((_ results: [HKQuantitySample]) -> Void)?) {
         queue.async {
             
@@ -902,6 +902,47 @@ extension HealthManager {
                 HealthLog.Log("=================================")
                 HealthLog.Log("=================================")
                 HealthLog.Log("查询\(startDate.toString(.custom("yyyy/MM/dd HH:mm"))) - \(endDate.toString(.custom("yyyy/MM/dd HH:mm")))【Active Energy Burned】成功，数量: \(results.count)")
+                HealthLog.Log("=================================")
+                HealthLog.Log("=================================")
+                
+                completion?(results)
+            }
+            HealthManager.default.healthStore.execute(query)
+        }
+    }
+    
+    /// 正念
+    public func requestMindfulSession(startDate: Date, endDate: Date, ascending: Bool, completion: ((_ results: [HKCategorySample]) -> Void)?) {
+        queue.async {
+            
+            let quantityType: HKCategoryType = HealthSampleType.mindfulSession
+            
+            let predicate = HKQuery.predicateForSamples(withStart: startDate, end: endDate)
+            
+            let timeSortDescriptor = NSSortDescriptor(key: HKSampleSortIdentifierEndDate, ascending: ascending)
+            let sortDescriptors = [timeSortDescriptor]
+            
+            let query = HKSampleQuery(sampleType: quantityType,
+                                      predicate: predicate,
+                                      limit: HKObjectQueryNoLimit,
+                                      sortDescriptors: sortDescriptors) { _, results, error in
+                if let error = error {
+                    
+                    HealthLog.Log("=================================")
+                    HealthLog.Log("=================================")
+                    HealthLog.Log("查询\(startDate.toString(.custom("yyyy/MM/dd HH:mm"))) - \(endDate.toString(.custom("yyyy/MM/dd HH:mm")))【Mindful Session】失败: \(error.localizedDescription)")
+                    HealthLog.Log("=================================")
+                    HealthLog.Log("=================================")
+                    
+                    completion?([])
+                    return
+                }
+                
+                let results = (results ?? []).map { $0 as? HKCategorySample }.compactMap { $0 }
+                
+                HealthLog.Log("=================================")
+                HealthLog.Log("=================================")
+                HealthLog.Log("查询\(startDate.toString(.custom("yyyy/MM/dd HH:mm"))) - \(endDate.toString(.custom("yyyy/MM/dd HH:mm")))【Mindful Session】成功，数量: \(results.count)")
                 HealthLog.Log("=================================")
                 HealthLog.Log("=================================")
                 
