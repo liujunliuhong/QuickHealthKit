@@ -23,20 +23,6 @@ private let respiratoryRateUnit = HKUnit.count().unitDivided(by: HKUnit.minute()
 private let kcalUnit = HKUnit.kilocalorie() // kcal
 private let kjUnit = HKUnit.jouleUnit(with: .kilo) // kj
 
-private let decimalNumberHandler_1 = NSDecimalNumberHandler(roundingMode: .plain,
-                                                            scale: 1,
-                                                            raiseOnExactness: false,
-                                                            raiseOnOverflow: false,
-                                                            raiseOnUnderflow: false,
-                                                            raiseOnDivideByZero: false)
-
-private let decimalNumberHandler_2 = NSDecimalNumberHandler(roundingMode: .plain,
-                                                            scale: 2,
-                                                            raiseOnExactness: false,
-                                                            raiseOnOverflow: false,
-                                                            raiseOnUnderflow: false,
-                                                            raiseOnDivideByZero: false)
-
 extension HKQuantitySample {
     /// 获取SDNN(ms)
     public var sdnn: Int {
@@ -78,15 +64,13 @@ extension HKQuantitySample {
     }
     
     /// 获取胰岛素(IU)
-    public var insulin: NSDecimalNumber {
-        let value = quantity.doubleValue(for: internationalUnit)
-        return NSDecimalNumber(value: value).rounding(accordingToBehavior: decimalNumberHandler_1)
+    public var insulin: Double {
+        return quantity.doubleValue(for: internationalUnit)
     }
     
     /// 获取血糖(mmol/L)
-    public var bloodGlucoseMmol: NSDecimalNumber {
-        let value = quantity.doubleValue(for: mmol_l_unit)
-        return NSDecimalNumber(value: value).rounding(accordingToBehavior: decimalNumberHandler_1)
+    public var bloodGlucoseMmol: Double {
+        return quantity.doubleValue(for: mmol_l_unit)
     }
     
     /// 获取声音（DB）
@@ -96,21 +80,18 @@ extension HKQuantitySample {
     }
     
     /// 获取呼吸速率
-    public var respiratoryRate: NSDecimalNumber {
-        let value = quantity.doubleValue(for: respiratoryRateUnit)
-        return NSDecimalNumber(value: value).rounding(accordingToBehavior: decimalNumberHandler_1)
+    public var respiratoryRate: Double {
+        return quantity.doubleValue(for: respiratoryRateUnit)
     }
     
     /// 距离（cm）
-    public var cmDistance: NSDecimalNumber {
-        let value = quantity.doubleValue(for: cmUnit)
-        return NSDecimalNumber(value: value).rounding(accordingToBehavior: decimalNumberHandler_1)
+    public var cmDistance: Double {
+        return quantity.doubleValue(for: cmUnit)
     }
     
     /// 距离（mile）
-    public var mileDistance: NSDecimalNumber {
-        let value = quantity.doubleValue(for: mileUnit)
-        return NSDecimalNumber(value: value).rounding(accordingToBehavior: decimalNumberHandler_1)
+    public var mileDistance: Double {
+        return quantity.doubleValue(for: mileUnit)
     }
     
     /// 楼梯数量
@@ -119,15 +100,13 @@ extension HKQuantitySample {
     }
     
     /// 获取卡路里（kcal）
-    public var kcal: NSDecimalNumber {
-        let value = quantity.doubleValue(for: kcalUnit)
-        return NSDecimalNumber(value: value).rounding(accordingToBehavior: decimalNumberHandler_2)
+    public var kcal: Double {
+        return quantity.doubleValue(for: kcalUnit)
     }
     
     /// 获取卡路里（kj）
-    public var kj: NSDecimalNumber {
-        let value = quantity.doubleValue(for: kjUnit)
-        return NSDecimalNumber(value: value).rounding(accordingToBehavior: decimalNumberHandler_2)
+    public var kj: Double {
+        return quantity.doubleValue(for: kjUnit)
     }
 }
 
@@ -212,23 +191,21 @@ extension Array where Element == HKQuantitySample {
     }
     
     /// 获取平均胰岛素
-    public var avgInsulin: NSDecimalNumber? {
+    public var avgInsulin: Double? {
         if isEmpty {
             return nil
         }
-        let total = reduce(NSDecimalNumber.zero, { $0.adding($1.insulin, withBehavior: decimalNumberHandler_1) })
-        let result = total.dividing(by: NSDecimalNumber(value: count), withBehavior: decimalNumberHandler_1)
-        return result
+        let total = reduce(Double.zero, { $0 + $1.insulin })
+        return total / Double(count)
     }
     
     /// 获取平均血糖
-    public var avgBloodGlucoseMmol: NSDecimalNumber? {
+    public var avgBloodGlucoseMmol: Double? {
         if isEmpty {
             return nil
         }
-        let total = reduce(NSDecimalNumber.zero, { $0.adding($1.bloodGlucoseMmol, withBehavior: decimalNumberHandler_1) })
-        let result = total.dividing(by: NSDecimalNumber(value: count), withBehavior: decimalNumberHandler_1)
-        return result
+        let total = reduce(Double.zero, { $0 + $1.bloodGlucoseMmol })
+        return total / Double(count)
     }
     
     /// HR范围
@@ -306,84 +283,58 @@ extension Array where Element == HKQuantitySample {
     }
     
     /// 获取平均呼吸速率
-    public var avgRespiratoryRate: NSDecimalNumber? {
+    public var avgRespiratoryRate: Double? {
         if isEmpty {
             return nil
         }
-        let total = reduce(NSDecimalNumber.zero, { $0.adding($1.respiratoryRate, withBehavior: decimalNumberHandler_1) })
-        let result = total.dividing(by: NSDecimalNumber(value: count), withBehavior: decimalNumberHandler_1)
-        return result
+        let total = reduce(Double.zero, { $0 + $1.respiratoryRate })
+        return total / Double(count)
     }
     
     /// 呼吸速率范围
-    public var respiratoryRateRange: (min: NSDecimalNumber, max: NSDecimalNumber)? {
+    public var respiratoryRateRange: (min: Double, max: Double)? {
         if isEmpty {
             return nil
         }
         let values = map { $0.respiratoryRate }
         
-        let newValues = values.sorted { d1, d2 -> Bool in
-            let r = d1.compare(d2)
-            if r == .orderedAscending || r == .orderedSame {
-                return true
-            }
-            return false
-        }
-        return (newValues.first!, newValues.last!)
+        return (values.min()!, values.max()!)
     }
     
     /// 获取平均cm距离
-    public var avgCmDistance: NSDecimalNumber? {
+    public var avgCmDistance: Double? {
         if isEmpty {
             return nil
         }
-        let total = reduce(NSDecimalNumber.zero, { $0.adding($1.cmDistance, withBehavior: decimalNumberHandler_1) })
-        let result = total.dividing(by: NSDecimalNumber(value: count), withBehavior: decimalNumberHandler_1)
-        return result
+        let total = reduce(Double.zero, { $0 + $1.cmDistance })
+        return total / Double(count)
     }
     
     /// cm距离范围
-    public var cmDistanceRange: (min: NSDecimalNumber, max: NSDecimalNumber)? {
+    public var cmDistanceRange: (min: Double, max: Double)? {
         if isEmpty {
             return nil
         }
         let values = map { $0.cmDistance }
-        
-        let newValues = values.sorted { d1, d2 -> Bool in
-            let r = d1.compare(d2)
-            if r == .orderedAscending || r == .orderedSame {
-                return true
-            }
-            return false
-        }
-        return (newValues.first!, newValues.last!)
+        return (values.min()!, values.max()!)
     }
     
     /// 获取平均mile距离
-    public var avgMileDistance: NSDecimalNumber? {
+    public var avgMileDistance: Double? {
         if isEmpty {
             return nil
         }
-        let total = reduce(NSDecimalNumber.zero, { $0.adding($1.mileDistance, withBehavior: decimalNumberHandler_1) })
-        let result = total.dividing(by: NSDecimalNumber(value: count), withBehavior: decimalNumberHandler_1)
-        return result
+        let total = reduce(Double.zero, { $0 + $1.mileDistance })
+        return total / Double(count)
     }
     
     /// mile距离范围
-    public var mileDistanceRange: (min: NSDecimalNumber, max: NSDecimalNumber)? {
+    public var mileDistanceRange: (min: Double, max: Double)? {
         if isEmpty {
             return nil
         }
         let values = map { $0.mileDistance }
-        
-        let newValues = values.sorted { d1, d2 -> Bool in
-            let r = d1.compare(d2)
-            if r == .orderedAscending || r == .orderedSame {
-                return true
-            }
-            return false
-        }
-        return (newValues.first!, newValues.last!)
+        return (values.min()!, values.max()!)
     }
     
     /// 楼梯数量范围
@@ -397,57 +348,39 @@ extension Array where Element == HKQuantitySample {
     }
     
     /// 获取平均kcal
-    public var avgKcal: NSDecimalNumber? {
+    public var avgKcal: Double? {
         if isEmpty {
             return nil
         }
-        let total = reduce(NSDecimalNumber.zero, { $0.adding($1.kcal, withBehavior: decimalNumberHandler_1) })
-        let result = total.dividing(by: NSDecimalNumber(value: count), withBehavior: decimalNumberHandler_1)
-        return result
+        let total = reduce(Double.zero, { $0 + $1.kcal })
+        return total / Double(count)
     }
     
     /// 卡路里范围（kcal）
-    public var kcalRange: (min: NSDecimalNumber, max: NSDecimalNumber)? {
+    public var kcalRange: (min: Double, max: Double)? {
         if isEmpty {
             return nil
         }
         let values = map { $0.kcal }
-        
-        let newValues = values.sorted { d1, d2 -> Bool in
-            let r = d1.compare(d2)
-            if r == .orderedAscending || r == .orderedSame {
-                return true
-            }
-            return false
-        }
-        return (newValues.first!, newValues.last!)
+        return (values.min()!, values.max()!)
     }
     
     /// 获取平均kj
-    public var avgKJ: NSDecimalNumber? {
+    public var avgKJ: Double? {
         if isEmpty {
             return nil
         }
-        let total = reduce(NSDecimalNumber.zero, { $0.adding($1.kj, withBehavior: decimalNumberHandler_1) })
-        let result = total.dividing(by: NSDecimalNumber(value: count), withBehavior: decimalNumberHandler_1)
-        return result
+        let total = reduce(Double.zero, { $0 + $1.kj })
+        return total / Double(count)
     }
     
     /// 卡路里范围（kj）
-    public var kjRange: (min: NSDecimalNumber, max: NSDecimalNumber)? {
+    public var kjRange: (min: Double, max: Double)? {
         if isEmpty {
             return nil
         }
         let values = map { $0.kj }
-        
-        let newValues = values.sorted { d1, d2 -> Bool in
-            let r = d1.compare(d2)
-            if r == .orderedAscending || r == .orderedSame {
-                return true
-            }
-            return false
-        }
-        return (newValues.first!, newValues.last!)
+        return (values.min()!, values.max()!)
     }
     
     /// 对`HKQuantitySample`集合排序（升序、降序）

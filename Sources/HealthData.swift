@@ -135,12 +135,12 @@ public final class HealthData: Identifiable, Equatable {
     }
     
     /// 获取平均胰岛素。如果为nil，表示无数据
-    public var avgInsulin: NSDecimalNumber? {
+    public var avgInsulin: Double? {
         return insulinDatas.avgInsulin
     }
     
     /// 获取平均血糖。如果为nil，表示无数据
-    public var avgBloodGlucoseMmol: NSDecimalNumber? {
+    public var avgBloodGlucoseMmol: Double? {
         return bloodGlucoseDatas.avgBloodGlucoseMmol
     }
     
@@ -279,15 +279,15 @@ extension Array where Element == HealthData {
     }
     
     /// 获取平均胰岛素。如果为nil，表示无数据
-    public var avgInsulin: NSDecimalNumber? {
+    public var avgInsulin: Double? {
         let values = map { $0.avgInsulin }.compactMap { $0 }
-        return _avg_(decimalNumberValues: values, scale: 1)
+        return _avg_(values: values)
     }
     
     /// 获取平均血糖。如果为nil，表示无数据
-    public var avgBloodGlucoseMmol: NSDecimalNumber? {
+    public var avgBloodGlucoseMmol: Double? {
         let values = map { $0.avgBloodGlucoseMmol }.compactMap { $0 }
-        return _avg_(decimalNumberValues: values, scale: 1)
+        return _avg_(values: values)
     }
     
     public var avgOtherData: HealthOtherData? {
@@ -338,21 +338,3 @@ private func _avg_(values: [Double]) -> Double? {
     return sum / CGFloat(values.count)
 }
 
-private func _avg_(decimalNumberValues: [NSDecimalNumber], scale: Int16) -> NSDecimalNumber? {
-    if decimalNumberValues.isEmpty {
-        return nil
-    }
-    
-    let decimalNumberHandler = NSDecimalNumberHandler(roundingMode: .plain,
-                                                      scale: scale,
-                                                      raiseOnExactness: false,
-                                                      raiseOnOverflow: false,
-                                                      raiseOnUnderflow: false,
-                                                      raiseOnDivideByZero: false)
-    
-    let total = decimalNumberValues.reduce(NSDecimalNumber.zero, { $0.adding($1, withBehavior: decimalNumberHandler) })
-    
-    let result = total.dividing(by: NSDecimalNumber(value: decimalNumberValues.count), withBehavior: decimalNumberHandler)
-    
-    return result
-}
