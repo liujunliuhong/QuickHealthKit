@@ -968,9 +968,9 @@ extension HealthManager {
                                                     intervalComponents: .init(hour: 1))
             query.initialResultsHandler = { _query_, _collection_, _error_ in
                 var results: [HKStatistics] = []
-                if let _collection_ = _collection_ {
-                    results = _collection_.statistics()
-                }
+                _collection_?.enumerateStatistics(from: startDate, to: endDate, with: { statistics, _ in
+                    results.append(statistics)
+                })
                 completion?(results)
             }
             HealthManager.default.healthStore.execute(query)
