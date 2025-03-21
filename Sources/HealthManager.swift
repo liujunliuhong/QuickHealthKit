@@ -211,16 +211,16 @@ extension HealthManager {
                     return
                 }
                 
-//                let results = (results ?? [])
-//                    .map { $0 as? HKQuantitySample }
-//                    .compactMap { $0 }
-//                    .filter({ sample -> Bool in
-//                        // 过滤掉用户输入的数据
-//                        if let value = sample.metadata?[HKMetadataKeyWasUserEntered] as? Bool {
-//                            return value == false
-//                        }
-//                        return true
-//                    })
+                //                let results = (results ?? [])
+                //                    .map { $0 as? HKQuantitySample }
+                //                    .compactMap { $0 }
+                //                    .filter({ sample -> Bool in
+                //                        // 过滤掉用户输入的数据
+                //                        if let value = sample.metadata?[HKMetadataKeyWasUserEntered] as? Bool {
+                //                            return value == false
+                //                        }
+                //                        return true
+                //                    })
                 
                 let results = (results ?? [])
                     .map { $0 as? HKQuantitySample }
@@ -946,6 +946,31 @@ extension HealthManager {
                 HealthLog.Log("=================================")
                 HealthLog.Log("=================================")
                 
+                completion?(results)
+            }
+            HealthManager.default.healthStore.execute(query)
+        }
+    }
+    
+    /// 请求统计信息（根据Hour进行分组）
+    public func requestStatisticsGroupByHour(quantityType: HKQuantityType,
+                                             startDate: Date,
+                                             endDate: Date,
+                                             options: HKStatisticsOptions,
+                                             completion: ((_ results: [HKStatistics]) -> Void)?) {
+        queue.async {
+            let predicate = HKQuery.predicateForSamples(withStart: startDate, end: endDate)
+            
+            let query = HKStatisticsCollectionQuery(quantityType: quantityType,
+                                                    quantitySamplePredicate: predicate,
+                                                    options: options,
+                                                    anchorDate: startDate,
+                                                    intervalComponents: .init(hour: 1))
+            query.initialResultsHandler = { _query_, _collection_, _error_ in
+                var results: [HKStatistics] = []
+                if let _collection_ = _collection_ {
+                    results = _collection_.statistics()
+                }
                 completion?(results)
             }
             HealthManager.default.healthStore.execute(query)

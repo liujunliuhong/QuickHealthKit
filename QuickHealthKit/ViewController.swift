@@ -67,31 +67,42 @@ extension ViewController {
         print("Start...")
         
         
-        let nowDate = Date(year: 2025, month: 3, day: 7, hour: 6, minute: 0)
+        let nowDate = Date(year: 2025, month: 3, day: 9, hour: 6, minute: 0)
         // let nowDate = Date.now
         
         let startDate = nowDate.dateAt(.startOfDay).date
         
         let endDate = nowDate.dateAt(.endOfDay).date
         
-        HealthManager.default.requestMindfulSession(startDate: startDate, endDate: endDate, ascending: true) { results in
+        HealthManager.default.requestStatisticsGroupByHour(quantityType: HealthSampleType.activeEnergyBurned, startDate: startDate, endDate: endDate, options: [.cumulativeSum]) { results in
             
-            //            var sum: NSDecimalNumber = .zero
-            for sample in results {
-                let sampleStartDate = sample.startDate
-                let sampleEndDate = sample.endDate
-                
-                let sampleStartDateString = sampleStartDate.toString(.custom("yyyy-MM-dd HH:mm"))
-                let sampleEndDateString = sampleEndDate.toString(.custom("yyyy-MM-dd HH:mm"))
-                
-                //print("😄😄😄: \(sampleStartDateString) - \(sampleEndDateString): \(sample.value)")
-                print(sample)
-                
-                //                sum = sum.adding(sample.kj)
+            for statistics in results {
+                let value = statistics.sumQuantity()?.doubleValue(for: .kcalUnit) ?? .zero
+                print(value)
             }
-            
-            //            print("------\(sum.stringValue)")
         }
+        
+//        HealthManager.default.__requestActiveEnergyBurned(startDate: startDate, endDate: endDate, ascending: true) { results in
+//            
+//        }
+//        HealthManager.default.requestMindfulSession(startDate: startDate, endDate: endDate, ascending: true) { results in
+//            
+//            //            var sum: NSDecimalNumber = .zero
+//            for sample in results {
+//                let sampleStartDate = sample.startDate
+//                let sampleEndDate = sample.endDate
+//                
+//                let sampleStartDateString = sampleStartDate.toString(.custom("yyyy-MM-dd HH:mm"))
+//                let sampleEndDateString = sampleEndDate.toString(.custom("yyyy-MM-dd HH:mm"))
+//                
+//                //print("😄😄😄: \(sampleStartDateString) - \(sampleEndDateString): \(sample.value)")
+//                print(sample)
+//                
+//                //                sum = sum.adding(sample.kj)
+//            }
+//            
+//            //            print("------\(sum.stringValue)")
+//        }
         
     }
 }

@@ -8,105 +8,108 @@
 import Foundation
 import HealthKit
 
-private let mmHgUnit = HKUnit.millimeterOfMercury() // mmHg
-private let kgUnit = HKUnit.gramUnit(with: .kilo) // kg
-private let cmUnit = HKUnit.meterUnit(with: .centi) // cm
-private let mUnit = HKUnit.meter() // m
-private let mileUnit = HKUnit.mile() // mile - 英里
-private let sdnnUnit = HKUnit.secondUnit(with: .milli) // ms
-private let heartUnit = HKUnit.count().unitDivided(by: HKUnit.minute()) // times/min
-private let countUnit = HKUnit.count() // times
-private let internationalUnit = HKUnit.internationalUnit() // U
-private let mmol_l_unit = HKUnit.moleUnit(with: HKMetricPrefix.milli, molarMass: HKUnitMolarMassBloodGlucose).unitDivided(by: HKUnit.liter()) // mmoL/L
-private let soundLevelUnit = HKUnit.decibelAWeightedSoundPressureLevel() // dB
-private let respiratoryRateUnit = HKUnit.count().unitDivided(by: HKUnit.minute()) // times/min
-private let kcalUnit = HKUnit.kilocalorie() // kcal
-private let kjUnit = HKUnit.jouleUnit(with: .kilo) // kj
+extension HKUnit {
+    public static let mmHgUnit = HKUnit.millimeterOfMercury() // mmHg
+    public static let kgUnit = HKUnit.gramUnit(with: .kilo) // kg
+    public static let cmUnit = HKUnit.meterUnit(with: .centi) // cm
+    public static let mUnit = HKUnit.meter() // m
+    public static let mileUnit = HKUnit.mile() // mile - 英里
+    public static let sdnnUnit = HKUnit.secondUnit(with: .milli) // ms
+    public static let heartUnit = HKUnit.count().unitDivided(by: HKUnit.minute()) // times/min
+    public static let countUnit = HKUnit.count() // times
+    public static let internationalUnit = HKUnit.internationalUnit() // U
+    public static let mmol_l_unit = HKUnit.moleUnit(with: HKMetricPrefix.milli, molarMass: HKUnitMolarMassBloodGlucose).unitDivided(by: HKUnit.liter()) // mmoL/L
+    public static let soundLevelUnit = HKUnit.decibelAWeightedSoundPressureLevel() // dB
+    public static let respiratoryRateUnit = HKUnit.count().unitDivided(by: HKUnit.minute()) // times/min
+    public static let kcalUnit = HKUnit.kilocalorie() // kcal
+    public static let kjUnit = HKUnit.jouleUnit(with: .kilo) // kj
+    
+}
 
 extension HKQuantitySample {
     /// 获取SDNN(ms)
     public var sdnn: Int {
-        let value = quantity.doubleValue(for: sdnnUnit)
+        let value = quantity.doubleValue(for: HKUnit.sdnnUnit)
         return Int(round(value))
     }
     
     /// 获取心率(BPM)
     public var hr: Int {
-        let value = quantity.doubleValue(for: heartUnit)
+        let value = quantity.doubleValue(for: HKUnit.heartUnit)
         return Int(round(value))
     }
     
     /// 获取静心心率(BPM)
     public var rhr: Int {
-        let value = quantity.doubleValue(for: heartUnit)
+        let value = quantity.doubleValue(for: HKUnit.heartUnit)
         return Int(round(value))
     }
     
     /// 获取身高(cm)
     public var cmHeight: Double {
-        return quantity.doubleValue(for: cmUnit)
+        return quantity.doubleValue(for: HKUnit.cmUnit)
     }
     
     /// 获取体重(kg)
     public var kgWeight: Double {
-        return quantity.doubleValue(for: kgUnit)
+        return quantity.doubleValue(for: HKUnit.kgUnit)
     }
     
     /// 获取血压(最高血压、最低血压) (mmHg)
     public var bloodPressure: Double {
-        return quantity.doubleValue(for: mmHgUnit)
+        return quantity.doubleValue(for: HKUnit.mmHgUnit)
     }
     
     /// 获取步数
     public var stepCount: Int {
-        let value = quantity.doubleValue(for: countUnit)
+        let value = quantity.doubleValue(for: HKUnit.countUnit)
         return Int(round(value))
     }
     
     /// 获取胰岛素(IU)
     public var insulin: Double {
-        return quantity.doubleValue(for: internationalUnit)
+        return quantity.doubleValue(for: HKUnit.internationalUnit)
     }
     
     /// 获取血糖(mmol/L)
     public var bloodGlucoseMmol: Double {
-        return quantity.doubleValue(for: mmol_l_unit)
+        return quantity.doubleValue(for: HKUnit.mmol_l_unit)
     }
     
     /// 获取声音（DB）
     public var soundDB: Int {
-        let value = quantity.doubleValue(for: soundLevelUnit)
+        let value = quantity.doubleValue(for: HKUnit.soundLevelUnit)
         return Int(round(value))
     }
     
     /// 获取呼吸速率
     public var respiratoryRate: Double {
-        return quantity.doubleValue(for: respiratoryRateUnit)
+        return quantity.doubleValue(for: HKUnit.respiratoryRateUnit)
     }
     
     /// 距离（cm）
     public var cmDistance: Double {
-        return quantity.doubleValue(for: cmUnit)
+        return quantity.doubleValue(for: HKUnit.cmUnit)
     }
     
     /// 距离（mile）
     public var mileDistance: Double {
-        return quantity.doubleValue(for: mileUnit)
+        return quantity.doubleValue(for: HKUnit.mileUnit)
     }
     
     /// 楼梯数量
     public var floorCount: Int {
-        return Int(quantity.doubleValue(for: countUnit))
+        return Int(quantity.doubleValue(for: HKUnit.countUnit))
     }
     
     /// 获取卡路里（kcal）
     public var kcal: Double {
-        return quantity.doubleValue(for: kcalUnit)
+        return quantity.doubleValue(for: HKUnit.kcalUnit)
     }
     
     /// 获取卡路里（kj）
     public var kj: Double {
-        return quantity.doubleValue(for: kjUnit)
+        return quantity.doubleValue(for: HKUnit.kjUnit)
     }
 }
 
@@ -122,7 +125,7 @@ extension HKQuantitySample {
     /// 根据SDNN构造一个`HKQuantitySample`对象
     public static func getQuantitySample(sdnn: Int, date: Date) -> HKQuantitySample {
         let type = HealthSampleType.heartRateVariabilitySDNN
-        let quantity = HKQuantity(unit: sdnnUnit, doubleValue: Double(sdnn))
+        let quantity = HKQuantity(unit: HKUnit.sdnnUnit, doubleValue: Double(sdnn))
         return HKQuantitySample(type: type,
                                 quantity: quantity,
                                 start: date,
@@ -132,7 +135,7 @@ extension HKQuantitySample {
     /// 根据HR构造一个`HKQuantitySample`对象
     public static func getQuantitySample(hr: Int, date: Date) -> HKQuantitySample? {
         let type = HealthSampleType.heartRate
-        let quantity = HKQuantity(unit: heartUnit, doubleValue: Double(hr))
+        let quantity = HKQuantity(unit: HKUnit.heartUnit, doubleValue: Double(hr))
         return HKQuantitySample(type: type,
                                 quantity: quantity,
                                 start: date,
