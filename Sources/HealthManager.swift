@@ -976,6 +976,45 @@ extension HealthManager {
             HealthManager.default.healthStore.execute(query)
         }
     }
+    
+    /// 请求统计信息
+    public func requestStatisticsGroup(quantityType: HKQuantityType,
+                                       startDate: Date,
+                                       endDate: Date,
+                                       options: HKStatisticsOptions,
+                                       anchorDate: Date,
+                                       intervalComponents: DateComponents,
+                                       completion: ((_ statisticsCollection: HKStatisticsCollection?) -> Void)?) {
+        queue.async {
+            let predicate = HKQuery.predicateForSamples(withStart: startDate, end: endDate)
+            let query = HKStatisticsCollectionQuery(quantityType: quantityType,
+                                                    quantitySamplePredicate: predicate,
+                                                    options: options,
+                                                    anchorDate: anchorDate,
+                                                    intervalComponents: intervalComponents)
+            query.initialResultsHandler = { _query_, _collection_, _error_ in
+                completion?(_collection_)
+            }
+            HealthManager.default.healthStore.execute(query)
+        }
+    }
+    
+    /// 请求统计信息
+    public func requestStatistics(quantityType: HKQuantityType,
+                                  startDate: Date,
+                                  endDate: Date,
+                                  options: HKStatisticsOptions,
+                                  completion: ((_ statistics: HKStatistics?) -> Void)?) {
+        queue.async {
+            let predicate = HKQuery.predicateForSamples(withStart: startDate, end: endDate)
+            
+            let query = HKStatisticsQuery(quantityType: quantityType, quantitySamplePredicate: predicate, options: options) { _, statistics, error in
+                completion?(statistics)
+            }
+            
+            HealthManager.default.healthStore.execute(query)
+        }
+    }
 }
 
 extension HealthManager {

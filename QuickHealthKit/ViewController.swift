@@ -51,6 +51,7 @@ class ViewController: UIViewController {
             HealthSampleType.flightsClimbed,
             HealthSampleType.activeEnergyBurned,
             HealthSampleType.mindfulSession,
+            HealthSampleType.heartRate,
         ]
         
         HealthManager.default.requestHealthAuthorization(with: types, allowWrite: false) { success in
@@ -67,20 +68,51 @@ extension ViewController {
         print("Start...")
         
         
-        let nowDate = Date(year: 2025, month: 3, day: 9, hour: 6, minute: 0)
-        // let nowDate = Date.now
+//        let nowDate = Date(year: 2025, month: 3, day: 9, hour: 6, minute: 0)
+//        // let nowDate = Date.now
+//        
+//        let startDate = nowDate.dateAt(.startOfDay).date
+//        
+//        let endDate = nowDate.dateAt(.endOfDay).date
         
-        let startDate = nowDate.dateAt(.startOfDay).date
+//        HealthManager.default.requestStatisticsGroupByHour(quantityType: HealthSampleType.activeEnergyBurned, startDate: startDate, endDate: endDate, options: [.cumulativeSum]) { results in
+//            
+//            for statistics in results {
+//                let value = statistics.sumQuantity()?.doubleValue(for: .kcalUnit) ?? .zero
+//                print(value)
+//            }
+//        }
         
-        let endDate = nowDate.dateAt(.endOfDay).date
+        let quantityType = HealthSampleType.heartRate
         
-        HealthManager.default.requestStatisticsGroupByHour(quantityType: HealthSampleType.activeEnergyBurned, startDate: startDate, endDate: endDate, options: [.cumulativeSum]) { results in
+        let nowDate = Date.now
+        
+        // 08:23
+        let startDate = Date(year: nowDate.year, month: nowDate.month, day: nowDate.day, hour: 8, minute: 23)
+        // 10:13
+        let endDate = Date(year: nowDate.year, month: nowDate.month, day: nowDate.day, hour: 10, minute: 13)
+        
+        let anchorDate = Date(year: nowDate.year, month: nowDate.month, day: nowDate.day, hour: startDate.hour, minute: 0)
+        
+        let enumerateStartDate = Date(year: nowDate.year, month: nowDate.month, day: nowDate.day, hour: startDate.hour, minute: 0)
+        let enumerateEndDate = Date(year: endDate.year, month: endDate.month, day: endDate.day, hour: endDate.hour, minute: 0)
+        
+        HealthManager.default.requestStatisticsGroup(quantityType: quantityType, startDate: startDate, endDate: endDate, options: [.discreteAverage, .discreteMax, .discreteMin], anchorDate: anchorDate, intervalComponents: .init(hour: 1)) { statisticsCollection in
             
-            for statistics in results {
-                let value = statistics.sumQuantity()?.doubleValue(for: .kcalUnit) ?? .zero
-                print(value)
+            if let statisticsCollection = statisticsCollection {
+                print("成功")
+                statisticsCollection.enumerateStatistics(from: startDate, to: endDate) { statistics, _ in
+                    let hr = Int(statistics.maximumQuantity()?.doubleValue(for: .heartUnit) ?? 0)
+                    
+                    let startDateString = statistics.startDate.toString(.custom("yyyy-MM-dd HH:mm"))
+                    let endDateString = statistics.endDate.toString(.custom("yyyy-MM-dd HH:mm"))
+                    print("\(startDateString) - \(endDateString): \(hr)")
+                }
+            } else {
+                print("失败")
             }
         }
+        
         
 //        HealthManager.default.__requestActiveEnergyBurned(startDate: startDate, endDate: endDate, ascending: true) { results in
 //            
