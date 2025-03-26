@@ -1015,6 +1015,21 @@ extension HealthManager {
             HealthManager.default.healthStore.execute(query)
         }
     }
+    
+    /// 请求Source
+    public func requestSource(sampleType: HKSampleType,
+                              completion: ((_ sources: [HKSource]) -> Void)?) {
+        queue.async {
+            let query = HKSourceQuery(sampleType: sampleType, samplePredicate: nil) { _, sources, _ in
+                if let sources = sources {
+                    completion?(Array(sources))
+                } else {
+                    completion?([])
+                }
+            }
+            HealthManager.default.healthStore.execute(query)
+        }
+    }
 }
 
 extension HealthManager {
