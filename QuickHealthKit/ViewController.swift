@@ -67,10 +67,42 @@ extension ViewController {
     @objc func testAction() {
         print("Start...")
         
-        HealthManager.default.requestSource(sampleType: HealthSampleType.sleepAnalysis) { sources in
-            for source in sources {
-                print(source)
-                print("\(source.name) - \(source.bundleIdentifier)")
+//        HealthManager.default.requestSource(sampleType: HealthSampleType.sleepAnalysis) { sources in
+//            for source in sources {
+//                print(source)
+//                print("\(source.name) - \(source.bundleIdentifier)")
+//            }
+//        }
+        
+        let nowDate = Date.now.dateAt(.yesterday).date
+        
+        let startDate = nowDate.dateAt(.startOfDay).date
+        let endDate = nowDate.dateAt(.endOfDay).date
+        
+        HealthManager.default.requestHeartRateVariability(startDate: startDate, endDate: endDate, ascending: true) { results in
+            
+            if let latestSample = results.last {
+                HealthManager.default.requestHeartRateVariability(uuid: latestSample.uuid) { sample in
+                    
+                    if let sample = sample {
+                        print("😄\(sample.sdnn)")
+                        
+                        HealthManager.default.requestBeatToBeatMeasurements(startDate: sample.startDate, endDate: sample.endDate, ascending: true) { otherDatas in
+                            
+                            for otherData in otherDatas {
+                                print("😓\(otherData?.rmssd?.description)")
+                            }
+                        }
+                        //12:02:03  -- 12:03:03
+                        HealthManager.default.requestStatistics(quantityType: HealthSampleType.heartRate, startDate: sample.startDate, endDate: sample.endDate, options: [.mostRecent]) { statistics in
+                            let hr = statistics?.mostRecentQuantity()?.doubleValue(for: HKUnit.heartUnit)
+                            print("🫀\(hr?.description)")
+                        }
+                    }
+                    
+                   
+                    
+                }
             }
         }
         

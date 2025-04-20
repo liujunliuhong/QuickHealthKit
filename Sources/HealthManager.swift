@@ -185,6 +185,43 @@ extension HealthManager {
         }
     }
     
+    /// 根据UUID请求HRV
+    public func requestHeartRateVariability(uuid: UUID, completion: ((_ result: HKQuantitySample?) -> Void)?) {
+        let quantityType = HealthSampleType.heartRateVariabilitySDNN
+        
+        let predicate = HKQuery.predicateForObject(with: uuid)
+        
+        let query = HKSampleQuery(sampleType: quantityType,
+                                  predicate: predicate,
+                                  limit: HKObjectQueryNoLimit,
+                                  sortDescriptors: nil) { _, results, error in
+            if let error = error {
+                
+                HealthLog.Log("=================================")
+                HealthLog.Log("=================================")
+                HealthLog.Log("查询\(uuid.uuidString)【HRV】失败: \(error.localizedDescription)")
+                HealthLog.Log("=================================")
+                HealthLog.Log("=================================")
+                
+                completion?(nil)
+                return
+            }
+            
+            let results = (results ?? [])
+                .map { $0 as? HKQuantitySample }
+                .compactMap { $0 }
+            
+            HealthLog.Log("=================================")
+            HealthLog.Log("=================================")
+            HealthLog.Log("查询\(uuid.uuidString)【HRV】成功，数量: \(results.count)")
+            HealthLog.Log("=================================")
+            HealthLog.Log("=================================")
+            
+            completion?(results.last)
+        }
+        HealthManager.default.healthStore.execute(query)
+    }
+    
     /// 获取HRV集合
     public func requestHeartRateVariability(startDate: Date, endDate: Date, ascending: Bool, completion: ((_ results: [HKQuantitySample]) -> Void)?) {
         queue.async {
