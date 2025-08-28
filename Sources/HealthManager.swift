@@ -408,7 +408,7 @@ extension HealthManager {
     }
     
     /// 获取高血压集合
-    public func requestBloodPressureSystolics(startDate: Date, endDate: Date, ascending: Bool, completion: ((_ results: [HKQuantitySample]) -> Void)?) {
+    public func requestBloodPressureSystolics(startDate: Date, endDate: Date, ascending: Bool, completion: ((_ results: [HKQuantitySample], _ error: Error?) -> Void)?) {
         queue.async {
             
             let quantityType: HKQuantityType = HealthSampleType.bloodPressureSystolic
@@ -430,7 +430,7 @@ extension HealthManager {
                     HealthLog.Log("=================================")
                     HealthLog.Log("=================================")
                     
-                    completion?([])
+                    completion?([], error)
                     return
                 }
                 
@@ -442,14 +442,14 @@ extension HealthManager {
                 HealthLog.Log("=================================")
                 HealthLog.Log("=================================")
                 
-                completion?(results)
+                completion?(results, nil)
             }
             HealthManager.default.healthStore.execute(query)
         }
     }
     
     /// 获取低血压集合
-    public func requestBloodPressureDiastolics(startDate: Date, endDate: Date, ascending: Bool, completion: ((_ results: [HKQuantitySample]) -> Void)?) {
+    public func requestBloodPressureDiastolics(startDate: Date, endDate: Date, ascending: Bool, completion: ((_ results: [HKQuantitySample], _ error: Error?) -> Void)?) {
         queue.async {
             
             let quantityType: HKQuantityType = HealthSampleType.bloodPressureDiastolic
@@ -471,7 +471,7 @@ extension HealthManager {
                     HealthLog.Log("=================================")
                     HealthLog.Log("=================================")
                     
-                    completion?([])
+                    completion?([], error)
                     return
                 }
                 
@@ -483,7 +483,7 @@ extension HealthManager {
                 HealthLog.Log("=================================")
                 HealthLog.Log("=================================")
                 
-                completion?(results)
+                completion?(results, nil)
             }
             HealthManager.default.healthStore.execute(query)
         }
@@ -1210,7 +1210,7 @@ extension HealthManager {
             
             if configuration.allowRequestBloodPressureSystolic {
                 group.enter()
-                HealthManager.default.requestBloodPressureSystolics(startDate: startDate, endDate: endDate, ascending: ascending) { results in
+                HealthManager.default.requestBloodPressureSystolics(startDate: startDate, endDate: endDate, ascending: ascending) { results, error in
                     bloodPressureSystolicSamples = results
                     group.leave()
                 }
@@ -1218,7 +1218,7 @@ extension HealthManager {
             
             if configuration.allowRequestBloodPressureDiastolic {
                 group.enter()
-                HealthManager.default.requestBloodPressureDiastolics(startDate: startDate, endDate: endDate, ascending: ascending) { results in
+                HealthManager.default.requestBloodPressureDiastolics(startDate: startDate, endDate: endDate, ascending: ascending) { results, error in
                     bloodPressureDiastolicSamples = results
                     group.leave()
                 }
